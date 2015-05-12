@@ -12,6 +12,7 @@ grid.open               = open;
 grid.getGrayScale       = getGrayScale;
 grid.putImage           = putImage;
 grid.blend              = blend;
+grid.copy               = copy;
 
 function createWorkplace() {
     var canvas = document.createElement('canvas');
@@ -286,6 +287,41 @@ function blend(srcImageObject, dstImageObject, offsetX, offsetY) {
     outImageObject.imageData = getImageDataFromPixel(pixel);
 
     return outImageObject;
+}
+
+function copy(imageObject) {
+    var x,
+        y,
+        width = imageObject.width,
+        height = imageObject.height,
+        pixel = {
+            'r' : [],
+            'g' : [],
+            'b' : [],
+            'a' : []
+        },
+        newImageObject = {
+            'width' : width,
+            'height' : height
+        };
+
+        for (y = 0; y < height; y++) {
+            pixel.r[y] = [];
+            pixel.g[y] = [];
+            pixel.b[y] = [];
+            pixel.a[y] = [];
+            for (x = 0; x < width; x++) {
+                pixel.r[y][x] = imageObject.pixel.r[y][x];
+                pixel.g[y][x] = imageObject.pixel.g[y][x];
+                pixel.b[y][x] = imageObject.pixel.b[y][x];
+                pixel.a[y][x] = imageObject.pixel.a[y][x];
+            }
+        }
+
+        newImageObject.pixel = pixel;
+        newImageObject.imageData = getImageDataFromPixel(pixel);
+
+        return newImageObject;
 }
 
 })(window, document);
