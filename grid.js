@@ -11,6 +11,7 @@ var grid = window.grid = window.grid || {},
 grid.open               = open;
 grid.getGrayScale       = getGrayScale;
 grid.putImage           = putImage;
+grid.blend              = blend;
 
 function createWorkplace() {
     var canvas = document.createElement('canvas');
@@ -61,9 +62,9 @@ function getPixelFromImageData(imageData, callback) {
         for (x = 0; x < width; x++) {
             index = (y * width + x) * 4;
             pixel.r[y][x] = I[index];
-            pixel.g[y][x] = I[index];
-            pixel.b[y][x] = I[index];
-            pixel.a[y][x] = I[index];
+            pixel.g[y][x] = I[index + 1];
+            pixel.b[y][x] = I[index + 2];
+            pixel.a[y][x] = I[index + 3] / 255;
         }
     }
 
@@ -113,9 +114,9 @@ function getImageDataFromPixel(pixel) {
         for (x = 0; x < width; x++) {
             index = (y * width + x) * 4;
             imageData.data[index]   = pixel.r[y][x];
-            imageData.data[index+1] = pixel.g[y][x];
-            imageData.data[index+2] = pixel.b[y][x];
-            imageData.data[index+3] = pixel.a[y][x];
+            imageData.data[index + 1] = pixel.g[y][x];
+            imageData.data[index + 2] = pixel.b[y][x];
+            imageData.data[index + 3] = Math.round(pixel.a[y][x] * 255);
         }
     }
 
@@ -167,7 +168,6 @@ function open(image, callback) {
 function getGrayScale(imageObject) {
     var x,
         y,
-        index,
         gray,
         width = imageObject.width,
         height = imageObject.height,
@@ -188,10 +188,9 @@ function getGrayScale(imageObject) {
         pixel.b[y] = [];
         pixel.a[y] = [];
         for (x = 0; x < width; x++) {
-            index = (y * width + x) * 4;
-            gray = 0.299 * imageObject.imageData.data[index] +
-                   0.587 * imageObject.imageData.data[index+1] +
-                   0.114 * imageObject.imageData.data[index+2];
+            gray = 0.299 * imageObject.pixel.r[y][x] +
+                   0.587 * imageObject.pixel.g[y][x] +
+                   0.114 * imageObject.pixel.b[y][x];
             pixel.r[y][x] = pixel.g[y][x] = pixel.b[y][x] = gray;
             pixel.a[y][x] = imageObject.pixel.a[y][x];
         }
@@ -210,6 +209,83 @@ function putImage(canvas, imageObject) {
     context = canvas.getContext('2d');
 
     context.putImageData(imageObject.imageData, 0, 0);
+}
+
+/*
+ * outImageObject has the same size as dstImageObject
+ */
+function blend(srcImageObject, dstImageObject, offsetX, offsetY) {
+    var x,
+        y,
+        width = dstImageObject.width,
+        height = dstImageObject.height,
+        srcWidth = srcImageObject.width,
+        srcHeight = srcImageObject.height,
+        pixel = {
+            'r' : [],
+            'g' : [],
+            'b' : [],
+            'a' : []
+        },
+        outImageObject = {
+            'width' : width,
+            'height' : height
+        };
+
+    offsetX = isNaN(offsetX) ? 0 : offsetX;
+    offsetY = isNaN(offsetY) ? 0 : offsetY;
+
+    for (y = 0; y < height; y++) {
+        pixel.r[y] = [];
+        pixel.g[y] = [];
+        pixel.b[y] = [];
+        pixel.a[y] = [];
+        for (x = 0; x < width; x++) {
+            pixel.a[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
+                        y - offsetY >= srcHeight || x - offsetX >= srcWidth) ?
+                    dstImageObject.pixel.a[y][x] :
+                    (srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+                        dstImageObject.pixel.a[y][x] *
+                        (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX]));
+
+            pixel.r[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
+                        y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
+                    dstImageObject.pixel.r[y][x] :
+                    (srcImageObject.pixel.r[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+                        dstImageObject.pixel.r[y][x] * dstImageObject.pixel.a[y][x] *
+                        (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / 
+                        pixel.a[y][x];
+
+            pixel.g[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
+                        y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
+                    dstImageObject.pixel.g[y][x] :
+                    (srcImageObject.pixel.g[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+                        dstImageObject.pixel.g[y][x] * dstImageObject.pixel.a[y][x] *
+                        (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / 
+                        pixel.a[y][x];
+
+            pixel.b[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
+                        y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
+                    dstImageObject.pixel.b[y][x] :
+                    (srcImageObject.pixel.b[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+                        dstImageObject.pixel.b[y][x] * dstImageObject.pixel.a[y][x] *
+                        (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / 
+                        pixel.a[y][x];
+
+            pixel.r[y][x] = Math.round(pixel.r[y][x]);
+            pixel.g[y][x] = Math.round(pixel.g[y][x]);
+            pixel.b[y][x] = Math.round(pixel.b[y][x]);
+
+            if (pixel.a[y][x] < 0.003) {
+                pixel.a[y][x] = dstImageObject.pixel.a[y][x];
+            }
+        }
+    }
+
+    outImageObject.pixel = pixel;
+    outImageObject.imageData = getImageDataFromPixel(pixel);
+
+    return outImageObject;
 }
 
 })(window, document);

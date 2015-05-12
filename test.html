@@ -4,9 +4,11 @@
 <script>
 var canvas = document.getElementById('test');
 
-grid.open('gridjs.png', function(imageObj) {
-    var grayImageObj = grid.getGrayScale(imageObj);
-    grid.putImage(canvas, grayImageObj);
+grid.open('blue.png', function(srcImageObj) {
+    grid.open('yellow.png', function(dstImageObj) {
+        var out = grid.blend(srcImageObj, dstImageObj, 20, -10);
+        grid.putImage(canvas, out);
+    });
 });
 </script>
 </body>
