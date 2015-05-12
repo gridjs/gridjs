@@ -128,7 +128,7 @@ function open(image, callback) {
         height,
         imageData;
 
-    if (Array.isArray(image) === true) {
+    if (Array.isArray(image.r) === true) {
         width = image[0].length;
         height = image.length;
         imageData = getImageDataFromPixel(image);
