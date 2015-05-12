@@ -232,8 +232,8 @@ function blend(srcImageObject, dstImageObject, offsetX, offsetY) {
             'height' : height
         };
 
-    offsetX = isNaN(offsetX) ? 0 : offsetX;
-    offsetY = isNaN(offsetY) ? 0 : offsetY;
+    offsetX = isNaN(offsetX) ? 0 : Math.round(offsetX);
+    offsetY = isNaN(offsetY) ? 0 : Math.round(offsetY);
 
     for (y = 0; y < height; y++) {
         pixel.r[y] = [];
