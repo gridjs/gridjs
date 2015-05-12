@@ -8,7 +8,9 @@
 var grid = window.grid = window.grid || {},
     workplace = createWorkplace();
 
-grid.open = open;
+grid.open               = open;
+grid.getGrayScale       = getGrayScale;
+grid.putImage           = putImage;
 
 function createWorkplace() {
     var canvas = document.createElement('canvas');
@@ -19,15 +21,19 @@ function createWorkplace() {
 
 function getImageDataFromURL(url, callback) {
     workplace = workplace || createWorkplace();
-    var context = workplace.getContext('2d');
-    var image = new Image();
+    var width,
+        height,
+        imageData,
+        context = workplace.getContext('2d'),
+        image = new Image();
+
     image.addEventListener('load', function() {
-        var width = image.width;
-        var height = image.height;
+        width = image.width;
+        height = image.height;
         workplace.width = width;
         workplace.height = height;
         context.drawImage(image, 0, 0);
-        var imageData = context.getImageData(0, 0, width, height);
+        imageData = context.getImageData(0, 0, width, height);
         callback(imageData);
     }, false);
     image.src = url;
@@ -40,18 +46,24 @@ function getPixelFromImageData(imageData, callback) {
         width = imageData.width,
         height = imageData.height,
         I = imageData.data,
-        pixel = [];
+        pixel = {
+            'r' : [],
+            'g' : [],
+            'b' : [],
+            'a' : []
+        };
 
-    for(y = 0; y < height; y++) {
-        pixel[y] = [];
-        for(x = 0; x < width; x++) {
+    for (y = 0; y < height; y++) {
+        pixel.r[y] = [];
+        pixel.g[y] = [];
+        pixel.b[y] = [];
+        pixel.a[y] = [];
+        for (x = 0; x < width; x++) {
             index = (y * width + x) * 4;
-            pixel[y][x] = {
-                'r' : I[index],
-                'g' : I[index+1],
-                'b' : I[index+2],
-                'a' : I[index+3]
-            };
+            pixel.r[y][x] = I[index];
+            pixel.g[y][x] = I[index];
+            pixel.b[y][x] = I[index];
+            pixel.a[y][x] = I[index];
         }
     }
 
@@ -59,53 +71,51 @@ function getPixelFromImageData(imageData, callback) {
 }
 
 function getPixelFromURL(url, callback) {
-    getImageDataFromURL(url, function(imageData, width, height) {
-        getPixelFromImageData(imageData, width, height, callback);
+    getImageDataFromURL(url, function(imageData) {
+        getPixelFromImageData(imageData, callback);
     });
 }
 
 function getPixel(image, callback) {
-    if(typeof(image) === 'string') {
+    if (typeof(image) === 'string') {
         getPixelFromURL(image, callback);
-    } else if(Array.isArray(image) === true) {
+    } else if (Array.isArray(image.r) === true) {
         callback(image);
-    } else if(typeof(image) === 'object') {
+    } else {
         getPixelFromImageData(image, callback);
     }
 }
 
 function getImageData(image, callback) {
-    if(typeof(image) === 'string') {
+    if (typeof(image) === 'string') {
         getImageDataFromURL(image, callback);
-    } else if(Array.isArray(image) === true) {
-        if(image.length ===1 || image[0].length === image[1].length) {
-            getImageDataFromPixel(image, callback);
-        } else {
-            callback(image);
-        }
+    } else if (Array.isArray(image.r) === true) {
+        getImageDataFromPixel(image, callback);
+    } else {
+        callback(image);
     }
 }
 
 function getImageDataFromPixel(pixel, callback) {
     workplace = workplace || createWorkplace();
-    var context = workplace.getContext('2d');
     var x,
         y,
-        width = pixel[0].length,
-        height = pixel.length,
         index,
+        width = pixel.r[0].length,
+        height = pixel.r.length,
+        context = workplace.getContext('2d'),
         imageData = context.getImageData(0, 0, width, height);
 
     workplace.width = width;
     workplace.height = height;
 
-    for(y = 0; y < height; y++) {
-        for(x = 0; x < width; x++) {
-            index = y * width + x;
-            imageData.data[index] = pixel[y][x]['r'];
-            imageData.data[index+1] = pixel[y][x]['g'];
-            imageData.data[index+2] = pixel[y][x]['b'];
-            imageData.data[index+3] = pixel[y][x]['a'];
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            index = (y * width + x) * 4;
+            imageData.data[index]   = pixel.r[y][x];
+            imageData.data[index+1] = pixel.g[y][x];
+            imageData.data[index+2] = pixel.b[y][x];
+            imageData.data[index+3] = pixel.a[y][x];
         }
     }
 
@@ -116,42 +126,92 @@ function open(image, callback) {
     var width,
         height;
 
-    if(Array.isArray(image) === true) {
+    if (Array.isArray(image) === true) {
         width = image[0].length;
         height = image.length;
         getImageDataFromPixel(image, function(imageData) {
             callback({
-                'pixel' : image,
+                'pixel'     : image,
                 'imageData' : imageData,
-                'height' : height,
-                'width' : width
+                'height'    : height,
+                'width'     : width
             });
         });
-    } else if(typeof(image) === 'string') {
+    } else if (typeof(image) === 'string') {
         getImageDataFromURL(image, function(imageData) {
             width = imageData.width;
             height = imageData.height;
             getPixelFromImageData(imageData, function(pixel) {
                 callback({
-                    'pixel' : pixel,
+                    'pixel'     : pixel,
                     'imageData' : imageData,
-                    'height' : height,
-                    'width' : width
+                    'height'    : height,
+                    'width'     : width
                 });
             });
         });
-    } else if(typeof(image) === 'object') {
+    } else if (typeof(image) === 'object') {
         width = image.width;
         height = image.height;
-        getPixelFromImageData(imageData, function(pixel) {
+        getPixelFromImageData(image, function(pixel) {
             callback({
-                'pixel' : pixel,
+                'pixel'     : pixel,
                 'imageData' : image,
-                'height' : height,
-                'width' : width
+                'height'    : height,
+                'width'     : width
             });
         });
     }
+}
+
+function getGrayScale(imageObject, callback) {
+    var x,
+        y,
+        index,
+        gray,
+        width = imageObject.width,
+        height = imageObject.height,
+        grayImageObject = {},
+        pixel = {
+            'r' : [],
+            'g' : [],
+            'b' : [],
+            'a' : []
+        };
+
+    grayImageObject.width = width;
+    grayImageObject.height = height;
+    
+    for (y = 0; y < height; y++) {
+        pixel.r[y] = [];
+        pixel.g[y] = [];
+        pixel.b[y] = [];
+        pixel.a[y] = [];
+        for (x = 0; x < width; x++) {
+            index = (y * width + x) * 4;
+            gray = 0.299 * imageObject.imageData.data[index] +
+                   0.587 * imageObject.imageData.data[index+1] +
+                   0.114 * imageObject.imageData.data[index+2];
+            pixel.r[y][x] = pixel.g[y][x] = pixel.b[y][x] = gray;
+            pixel.a[y][x] = imageObject.pixel.a[y][x];
+        }
+    }
+    grayImageObject.pixel = pixel;
+
+    getImageDataFromPixel(pixel, function(imageData) {
+        grayImageObject.imageData = imageData;
+        callback(grayImageObject);
+    });
+}
+
+function putImage(canvas, imageObject) {
+    var context;
+
+    canvas.width = imageObject.width;
+    canvas.height = imageObject.height;
+    context = canvas.getContext('2d');
+
+    context.putImageData(imageObject.imageData, 0, 0);
 }
 
 })(window, document);

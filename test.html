@@ -1,8 +1,13 @@
 <body>
+<canvas id="test"></canvas>
 <script src="grid.js"></script>
 <script>
+var canvas = document.getElementById('test');
+
 grid.open('gridjs.png', function(imageObj) {
-    console.log(imageObj);
+    grid.getGrayScale(imageObj, function(grayImageObj) {
+        grid.putImage(canvas, grayImageObj);
+    });
 });
 </script>
 </body>
