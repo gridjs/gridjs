@@ -90,13 +90,13 @@ function getImageData(image, callback) {
     if (typeof(image) === 'string') {
         getImageDataFromURL(image, callback);
     } else if (Array.isArray(image.r) === true) {
-        getImageDataFromPixel(image, callback);
+        callback(getImageDataFromPixel(image));
     } else {
         callback(image);
     }
 }
 
-function getImageDataFromPixel(pixel, callback) {
+function getImageDataFromPixel(pixel) {
     workplace = workplace || createWorkplace();
     var x,
         y,
@@ -119,23 +119,23 @@ function getImageDataFromPixel(pixel, callback) {
         }
     }
 
-    callback(imageData);
+    return imageData;
 }
 
 function open(image, callback) {
     var width,
-        height;
+        height,
+        imageData;
 
     if (Array.isArray(image) === true) {
         width = image[0].length;
         height = image.length;
-        getImageDataFromPixel(image, function(imageData) {
-            callback({
-                'pixel'     : image,
-                'imageData' : imageData,
-                'height'    : height,
-                'width'     : width
-            });
+        imageData = getImageDataFromPixel(image);
+        callback({
+            'pixel'     : image,
+            'imageData' : imageData,
+            'height'    : height,
+            'width'     : width
         });
     } else if (typeof(image) === 'string') {
         getImageDataFromURL(image, function(imageData) {
@@ -164,7 +164,7 @@ function open(image, callback) {
     }
 }
 
-function getGrayScale(imageObject, callback) {
+function getGrayScale(imageObject) {
     var x,
         y,
         index,
@@ -198,10 +198,8 @@ function getGrayScale(imageObject, callback) {
     }
     grayImageObject.pixel = pixel;
 
-    getImageDataFromPixel(pixel, function(imageData) {
-        grayImageObject.imageData = imageData;
-        callback(grayImageObject);
-    });
+    grayImageObject.imageData = getImageDataFromPixel(pixel);
+    return grayImageObject;
 }
 
 function putImage(canvas, imageObject) {

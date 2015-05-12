@@ -5,9 +5,8 @@
 var canvas = document.getElementById('test');
 
 grid.open('gridjs.png', function(imageObj) {
-    grid.getGrayScale(imageObj, function(grayImageObj) {
-        grid.putImage(canvas, grayImageObj);
-    });
+    var grayImageObj = grid.getGrayScale(imageObj);
+    grid.putImage(canvas, grayImageObj);
 });
 </script>
 </body>
