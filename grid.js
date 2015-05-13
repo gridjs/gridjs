@@ -3,7 +3,7 @@
  * (c) 2015 Sneezry http://gridjs.org
  * License: MIT
  */
-(function(window,document,undefined) {'use strict';
+(function(window, document, undefined) {'use strict';
 
 var grid = window.grid = window.grid || {},
     workplace = createWorkplace();
