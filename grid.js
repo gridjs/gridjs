@@ -7,6 +7,7 @@
 
 var grid = window.grid = window.grid || {},
     workplace = createWorkplace(),
+    imageDataWorkplace = createWorkplace(),
     ImageObject;
 
 ImageObject = function() {
@@ -17,10 +18,7 @@ ImageObject = function() {
 };
 
 function createWorkplace() {
-  var canvas = document.createElement('canvas');
-  canvas.style.display = 'none';
-  document.getElementsByTagName('body')[0].appendChild(canvas);
-  return canvas;
+  return document.createElement('canvas');
 }
 
 function getImageDataFromURL(url, callback) {
@@ -44,9 +42,7 @@ function getImageDataFromURL(url, callback) {
 }
 
 function getPixelFromImageData(imageData) {
-  var x,
-      y,
-      index,
+  var x, y, index,
       width = imageData.width,
       height = imageData.height,
       I = imageData.data,
@@ -74,6 +70,7 @@ function getPixelFromImageData(imageData) {
   return pixel;
 }
 
+/*
 function getPixelFromURL(url, callback) {
   getImageDataFromURL(url, function(imageData) {
     getPixelFromImageData(imageData, callback);
@@ -99,12 +96,11 @@ function getImageData(image, callback) {
     callback(image);
   }
 }
+*/
 
 function getImageDataFromPixel(pixel) {
   workplace = workplace || createWorkplace();
-  var x,
-      y,
-      index,
+  var x, y, index,
       width = pixel.r[0].length,
       height = pixel.r.length,
       context = workplace.getContext('2d'),
@@ -126,58 +122,70 @@ function getImageDataFromPixel(pixel) {
   return imageData;
 }
 
+function getImageFromImageData(imageData) {
+  var imageDataContext = imageDataWorkplace.getContext('2d');
+
+  imageDataWorkplace.width = imageData.width;
+  imageDataWorkplace.height = imageData.height;
+  imageDataContext.putImageData(imageData, 0, 0);
+
+  return imageDataWorkplace;
+}
+
 grid.open = function(image, callback) {
-  var width,
-      height,
-      imageData,
-      imageObject,
-      pixel;
-
-  if (Array.isArray(image.r) === true) {
-    width = image[0].length;
-    height = image.length;
-    imageData = getImageDataFromPixel(image);
-
-    imageObject = new ImageObject();
-    imageObject.prototype.pixel = image;
-    imageObject.prototype.imageData = imageData;
-    imageObject.prototype.height = height;
-    imageObject.prototype.width = width;
-
-    callback(imageObject);
-  } else if (typeof(image) === 'string') {
-    getImageDataFromURL(image, function(imageData) {
-      width = imageData.width;
-      height = imageData.height;
-      pixel = getPixelFromImageData(imageData);
-
-      imageObject = new ImageObject();
-      imageObject.pixel = pixel;
-      imageObject.imageData = imageData;
-      imageObject.height = height;
-      imageObject.width = width;
-
-      callback(imageObject);
-    });
+  if (typeof(image) === 'string') {
+    grid.getImageObjectFromURL(image, callback);
+  } else if (Array.isArray(image.r) === true) {
+    callback(grid.getImageObjectFromPixel(image));
   } else if (typeof(image) === 'object') {
-    width = image.width;
-    height = image.height;
-    pixel = getPixelFromImageData(image);
-
-    imageObject = new ImageObject();
-    imageObject.pixel = pixel;
-    imageObject.imageData = image;
-    imageObject.height = height;
-    imageObject.width = width;
-
-    callback(imageObject);
+    callback(grid.getImageObjectFromImageData(image));
   }
 };
 
+grid.getImageObject = grid.open;
+
+grid.getImageObjectFromURL = function(url, callback) {
+  getImageDataFromURL(url, function(imageData) {
+    var imageObject = new ImageObject();
+    imageObject.imageData = imageData;
+    imageObject.pixel = getPixelFromImageData(imageData);
+    imageObject.width = imageData.width;
+    imageObject.height = imageData.height;
+
+    callback(imageObject);
+  });
+};
+
+grid.getImageObjectFromImageData = function(imageData) {
+  var width = imageData.width,
+      height = imageData.height,
+      pixel = getPixelFromImageData(imageData),
+      imageObject = new ImageObject();
+
+  imageObject.pixel = pixel;
+  imageObject.imageData = imageData;
+  imageObject.height = height;
+  imageObject.width = width;
+
+  return imageObject;
+};
+
+grid.getImageObjectFromPixel = function(pixel) {
+  var width = pixel[0].length,
+      height = pixel.length,
+      imageData = getImageDataFromPixel(pixel),
+      imageObject = new ImageObject();
+
+    imageObject.pixel = pixel;
+    imageObject.imageData = imageData;
+    imageObject.height = height;
+    imageObject.width = width;
+
+    return imageObject;
+};
+
 ImageObject.prototype.grayscale = function() {
-  var x,
-      y,
-      gray,
+  var x, y, gray,
       imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -225,8 +233,7 @@ ImageObject.prototype.putImage = function(canvas) {
 };
 
 ImageObject.prototype.blend = function(srcImageObject, offsetX, offsetY) {
-  var x,
-      y,
+  var x, y,
       imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -286,17 +293,16 @@ ImageObject.prototype.blend = function(srcImageObject, offsetX, offsetY) {
     }
   }
 
+  imageObject.width = width;
+  imageObject.height = height;
   imageObject.pixel = pixel;
   imageObject.imageData = getImageDataFromPixel(pixel);
-  imageObject.height = height;
-  imageObject.width = width;
 
   return imageObject;
 };
 
 ImageObject.prototype.copy = function() {
-  var x,
-      y,
+  var x, y,
       imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -331,22 +337,12 @@ ImageObject.prototype.copy = function() {
 
 ImageObject.prototype.resize = function(newWidth, newHeight) {
   var imageObject = this,
-      width = imageObject.width,
-      height = imageObject.height,
       context = workplace.getContext('2d'),
-      tempWorkplace = document.createElement('canvas'),
-      tempContext = tempWorkplace.getContext('2d');
-
-  tempWorkplace.width = width;
-  tempWorkplace.height = height;
-  tempContext.putImageData(imageObject.imageData, 0, 0);
+      image = getImageFromImageData(imageObject.imageData);
 
   workplace.width = newWidth;
   workplace.height = newHeight;
-  context.drawImage(tempWorkplace, 0, 0, newWidth, newHeight);
-
-  tempWorkplace = null;
-  tempContext = null;
+  context.drawImage(image, 0, 0, newWidth, newHeight);
 
   imageObject.width = newWidth;
   imageObject.height = newHeight;
@@ -362,13 +358,8 @@ ImageObject.prototype.rotate = function(degree) {
       height = imageObject.height,
       rad = -degree * Math.PI / 180,
       context = workplace.getContext('2d'),
-      tempWorkplace = document.createElement('canvas'),
-      tempContext = tempWorkplace.getContext('2d'),
+      image = getImageFromImageData(imageObject.imageData),
       rotatedWidth, rotatedHeight;
-
-  tempWorkplace.width = width;
-  tempWorkplace.height = height;
-  tempContext.putImageData(imageObject.imageData, 0, 0);
 
   rotatedWidth = Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad));
   rotatedWidth = Math.ceil(rotatedWidth);
@@ -380,11 +371,28 @@ ImageObject.prototype.rotate = function(degree) {
   context.translate(rotatedWidth / 2, rotatedHeight / 2);
   context.rotate(rad);
   context.translate(-width / 2, -height / 2);
-  context.drawImage(tempWorkplace, 0, 0);
+  context.drawImage(image, 0, 0);
 
   imageObject.width = rotatedWidth;
   imageObject.height = rotatedHeight;
   imageObject.imageData = context.getImageData(0, 0, rotatedWidth, rotatedHeight);
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+};
+
+ImageObject.prototype.crop = function(left, top, cropWidth, cropHeight) {
+  var imageObject = this,
+      context = workplace.getContext('2d'),
+      image = getImageFromImageData(imageObject.imageData);
+
+  workplace.width = cropWidth;
+  workplace.height = cropHeight;
+  context.drawImage(image, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+  imageObject.width = cropWidth;
+  imageObject.height = cropHeight;
+  imageObject.imageData = context.getImageData(0, 0, cropWidth, cropHeight);
   imageObject.pixel = getPixelFromImageData(imageObject.imageData);
 
   return imageObject;
