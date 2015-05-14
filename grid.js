@@ -9,21 +9,12 @@ var grid = window.grid = window.grid || {},
     workplace = createWorkplace(),
     ImageObject;
 
-grid.open = open;
-
 ImageObject = function() {
   this.width        = null;
   this.height       = null;
   this.pixel        = null;
   this.imageData    = null;
 };
-
-ImageObject.prototype.grayscale    = grayscale;
-ImageObject.prototype.putImage     = putImage;
-ImageObject.prototype.blend        = blend;
-ImageObject.prototype.copy         = copy;
-ImageObject.prototype.resize       = resize;
-ImageObject.prototype.rotate       = rotate;
 
 function createWorkplace() {
   var canvas = document.createElement('canvas');
@@ -135,7 +126,7 @@ function getImageDataFromPixel(pixel) {
   return imageData;
 }
 
-function open(image, callback) {
+grid.open = function(image, callback) {
   var width,
       height,
       imageData,
@@ -181,9 +172,9 @@ function open(image, callback) {
 
     callback(imageObject);
   }
-}
+};
 
-function grayscale() {
+ImageObject.prototype.grayscale = function() {
   var x,
       y,
       gray,
@@ -218,9 +209,9 @@ function grayscale() {
   grayImageObject.width = width;
 
   return grayImageObject;
-}
+};
 
-function putImage(canvas) {
+ImageObject.prototype.putImage = function(canvas) {
   var context,
       imageObject = this;
 
@@ -231,9 +222,9 @@ function putImage(canvas) {
   context.putImageData(imageObject.imageData, 0, 0);
 
   return imageObject;
-}
+};
 
-function blend(srcImageObject, offsetX, offsetY) {
+ImageObject.prototype.blend = function(srcImageObject, offsetX, offsetY) {
   var x,
       y,
       imageObject = this,
@@ -301,9 +292,9 @@ function blend(srcImageObject, offsetX, offsetY) {
   imageObject.width = width;
 
   return imageObject;
-}
+};
 
-function copy() {
+ImageObject.prototype.copy = function() {
   var x,
       y,
       imageObject = this,
@@ -336,9 +327,9 @@ function copy() {
   newImageObject.width = width;
 
   return newImageObject;
-}
+};
 
-function resize(newWidth, newHeight) {
+ImageObject.prototype.resize = function(newWidth, newHeight) {
   var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -363,9 +354,9 @@ function resize(newWidth, newHeight) {
   imageObject.pixel = getPixelFromImageData(imageObject.imageData);
 
   return imageObject;
-}
+};
 
-function rotate(degree) {
+ImageObject.prototype.rotate = function(degree) {
   var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -397,6 +388,6 @@ function rotate(degree) {
   imageObject.pixel = getPixelFromImageData(imageObject.imageData);
 
   return imageObject;
-}
+};
 
 })(window, document);
