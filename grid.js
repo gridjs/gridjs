@@ -6,13 +6,22 @@
 (function(window, document, undefined) {'use strict';
 
 var grid = window.grid = window.grid || {},
-    workplace = createWorkplace();
+    workplace = createWorkplace(),
+    ImageObject;
 
 grid.open               = open;
-grid.getGrayScale       = getGrayScale;
-grid.putImage           = putImage;
-grid.blend              = blend;
-grid.copy               = copy;
+
+ImageObject = function() {
+  this.width        = null;
+  this.height       = null;
+  this.pixel        = null;
+  this.imageData    = null;
+};
+
+ImageObject.prototype.grayscale    = grayscale;
+ImageObject.prototype.putImage     = putImage;
+ImageObject.prototype.blend        = blend;
+ImageObject.prototype.copy         = copy;
 
 function createWorkplace() {
   var canvas = document.createElement('canvas');
@@ -41,7 +50,7 @@ function getImageDataFromURL(url, callback) {
   image.src = url;
 }
 
-function getPixelFromImageData(imageData, callback) {
+function getPixelFromImageData(imageData) {
   var x,
       y,
       index,
@@ -69,7 +78,7 @@ function getPixelFromImageData(imageData, callback) {
     }
   }
 
-  callback(pixel);
+  return pixel;
 }
 
 function getPixelFromURL(url, callback) {
@@ -127,61 +136,65 @@ function getImageDataFromPixel(pixel) {
 function open(image, callback) {
   var width,
       height,
-      imageData;
+      imageData,
+      imageObject,
+      pixel;
 
   if (Array.isArray(image.r) === true) {
     width = image[0].length;
     height = image.length;
     imageData = getImageDataFromPixel(image);
-    callback({
-      'pixel'     : image,
-      'imageData' : imageData,
-      'height'    : height,
-      'width'     : width
-    });
+
+    imageObject = new ImageObject();
+    imageObject.prototype.pixel = image;
+    imageObject.prototype.imageData = imageData;
+    imageObject.prototype.height = height;
+    imageObject.prototype.width = width;
+
+    callback(imageObject);
   } else if (typeof(image) === 'string') {
     getImageDataFromURL(image, function(imageData) {
       width = imageData.width;
       height = imageData.height;
-      getPixelFromImageData(imageData, function(pixel) {
-        callback({
-          'pixel'     : pixel,
-          'imageData' : imageData,
-          'height'    : height,
-          'width'     : width
-        });
-      });
+      pixel = getPixelFromImageData(imageData);
+
+      imageObject = new ImageObject();
+      imageObject.pixel = pixel;
+      imageObject.imageData = imageData;
+      imageObject.height = height;
+      imageObject.width = width;
+
+      callback(imageObject);
     });
   } else if (typeof(image) === 'object') {
     width = image.width;
     height = image.height;
-    getPixelFromImageData(image, function(pixel) {
-      callback({
-        'pixel'     : pixel,
-        'imageData' : image,
-        'height'    : height,
-        'width'     : width
-      });
-    });
+    pixel = getPixelFromImageData(image);
+
+    imageObject = new ImageObject();
+    imageObject.pixel = pixel;
+    imageObject.imageData = image;
+    imageObject.height = height;
+    imageObject.width = width;
+
+    callback(imageObject);
   }
 }
 
-function getGrayScale(imageObject) {
+function grayscale() {
   var x,
       y,
       gray,
+      imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
-      grayImageObject = {},
+      grayImageObject = new ImageObject(),
       pixel = {
         'r' : [],
         'g' : [],
         'b' : [],
         'a' : []
       };
-
-  grayImageObject.width = width;
-  grayImageObject.height = height;
     
   for (y = 0; y < height; y++) {
     pixel.r[y] = [];
@@ -196,14 +209,18 @@ function getGrayScale(imageObject) {
       pixel.a[y][x] = imageObject.pixel.a[y][x];
     }
   }
+
   grayImageObject.pixel = pixel;
   grayImageObject.imageData = getImageDataFromPixel(pixel);
+  grayImageObject.height = height;
+  grayImageObject.width = width;
 
   return grayImageObject;
 }
 
-function putImage(canvas, imageObject) {
-  var context;
+function putImage(canvas) {
+  var context,
+      imageObject = this;
 
   canvas.width = imageObject.width;
   canvas.height = imageObject.height;
@@ -215,22 +232,20 @@ function putImage(canvas, imageObject) {
 /*
  * outImageObject has the same size as dstImageObject
  */
-function blend(srcImageObject, dstImageObject, offsetX, offsetY) {
+function blend(srcImageObject, offsetX, offsetY) {
   var x,
       y,
+      dstImageObject = this,
       width = dstImageObject.width,
       height = dstImageObject.height,
       srcWidth = srcImageObject.width,
       srcHeight = srcImageObject.height,
+      imageObject = new ImageObject(),
       pixel = {
         'r' : [],
         'g' : [],
         'b' : [],
         'a' : []
-      },
-      outImageObject = {
-        'width' : width,
-        'height' : height
       };
 
   offsetX = isNaN(offsetX) ? 0 : Math.round(offsetX);
@@ -280,26 +295,26 @@ function blend(srcImageObject, dstImageObject, offsetX, offsetY) {
     }
   }
 
-  outImageObject.pixel = pixel;
-  outImageObject.imageData = getImageDataFromPixel(pixel);
+  imageObject.pixel = pixel;
+  imageObject.imageData = getImageDataFromPixel(pixel);
+  imageObject.height = height;
+  imageObject.width = width;
 
-  return outImageObject;
+  return imageObject;
 }
 
-function copy(imageObject) {
+function copy() {
   var x,
       y,
+      imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
+      newImageObject = new ImageObject(),
       pixel = {
         'r' : [],
         'g' : [],
         'b' : [],
         'a' : []
-      },
-      newImageObject = {
-        'width' : width,
-        'height' : height
       };
 
   for (y = 0; y < height; y++) {
@@ -317,6 +332,8 @@ function copy(imageObject) {
 
   newImageObject.pixel = pixel;
   newImageObject.imageData = getImageDataFromPixel(pixel);
+  newImageObject.height = height;
+  newImageObject.width = width;
 
   return newImageObject;
 }

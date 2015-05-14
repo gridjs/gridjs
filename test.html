@@ -5,10 +5,9 @@
 var canvas = document.getElementById('test');
 
 grid.open('blue.png', function(srcImageObj) {
-    var copy = grid.copy(srcImageObj);
+    var copy = srcImageObj.copy();
     grid.open('yellow.png', function(dstImageObj) {
-        var out = grid.blend(copy, dstImageObj, 10, -10);
-        grid.putImage(canvas, out);
+        dstImageObj.blend(copy.grayscale(), 10, -10).putImage(canvas);
     });
 });
 </script>
