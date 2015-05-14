@@ -9,7 +9,7 @@ var grid = window.grid = window.grid || {},
     workplace = createWorkplace(),
     ImageObject;
 
-grid.open               = open;
+grid.open = open;
 
 ImageObject = function() {
   this.width        = null;
@@ -22,6 +22,8 @@ ImageObject.prototype.grayscale    = grayscale;
 ImageObject.prototype.putImage     = putImage;
 ImageObject.prototype.blend        = blend;
 ImageObject.prototype.copy         = copy;
+ImageObject.prototype.resize       = resize;
+ImageObject.prototype.rotate       = rotate;
 
 function createWorkplace() {
   var canvas = document.createElement('canvas');
@@ -115,7 +117,7 @@ function getImageDataFromPixel(pixel) {
       width = pixel.r[0].length,
       height = pixel.r.length,
       context = workplace.getContext('2d'),
-      imageData = context.getImageData(0, 0, width, height);
+      imageData = context.createImageData(width, height);
 
   workplace.width = width;
   workplace.height = height;
@@ -227,20 +229,18 @@ function putImage(canvas) {
   context = canvas.getContext('2d');
 
   context.putImageData(imageObject.imageData, 0, 0);
+
+  return imageObject;
 }
 
-/*
- * outImageObject has the same size as dstImageObject
- */
 function blend(srcImageObject, offsetX, offsetY) {
   var x,
       y,
-      dstImageObject = this,
-      width = dstImageObject.width,
-      height = dstImageObject.height,
+      imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
       srcWidth = srcImageObject.width,
       srcHeight = srcImageObject.height,
-      imageObject = new ImageObject(),
       pixel = {
         'r' : [],
         'g' : [],
@@ -259,30 +259,30 @@ function blend(srcImageObject, offsetX, offsetY) {
     for (x = 0; x < width; x++) {
       pixel.a[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
               y - offsetY >= srcHeight || x - offsetX >= srcWidth) ?
-          dstImageObject.pixel.a[y][x] :
+          imageObject.pixel.a[y][x] :
           (srcImageObject.pixel.a[y - offsetY][x - offsetX] +
-              dstImageObject.pixel.a[y][x] *
+              imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX]));
 
       pixel.r[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
               y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
-          dstImageObject.pixel.r[y][x] :
+          imageObject.pixel.r[y][x] :
           (srcImageObject.pixel.r[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
-              dstImageObject.pixel.r[y][x] * dstImageObject.pixel.a[y][x] *
+              imageObject.pixel.r[y][x] * imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / pixel.a[y][x];
 
       pixel.g[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
               y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
-          dstImageObject.pixel.g[y][x] :
+          imageObject.pixel.g[y][x] :
           (srcImageObject.pixel.g[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
-              dstImageObject.pixel.g[y][x] * dstImageObject.pixel.a[y][x] *
+              imageObject.pixel.g[y][x] * imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / pixel.a[y][x];
 
       pixel.b[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
               y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
-          dstImageObject.pixel.b[y][x] :
+          imageObject.pixel.b[y][x] :
           (srcImageObject.pixel.b[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
-              dstImageObject.pixel.b[y][x] * dstImageObject.pixel.a[y][x] *
+              imageObject.pixel.b[y][x] * imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / pixel.a[y][x];
 
       pixel.r[y][x] = Math.round(pixel.r[y][x]);
@@ -290,7 +290,7 @@ function blend(srcImageObject, offsetX, offsetY) {
       pixel.b[y][x] = Math.round(pixel.b[y][x]);
 
       if (pixel.a[y][x] < 0.003) {
-        pixel.a[y][x] = dstImageObject.pixel.a[y][x];
+        pixel.a[y][x] = imageObject.pixel.a[y][x];
       }
     }
   }
@@ -336,6 +336,67 @@ function copy() {
   newImageObject.width = width;
 
   return newImageObject;
+}
+
+function resize(newWidth, newHeight) {
+  var imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      context = workplace.getContext('2d'),
+      tempWorkplace = document.createElement('canvas'),
+      tempContext = tempWorkplace.getContext('2d');
+
+  tempWorkplace.width = width;
+  tempWorkplace.height = height;
+  tempContext.putImageData(imageObject.imageData, 0, 0);
+
+  workplace.width = newWidth;
+  workplace.height = newHeight;
+  context.drawImage(tempWorkplace, 0, 0, newWidth, newHeight);
+
+  tempWorkplace = null;
+  tempContext = null;
+
+  imageObject.width = newWidth;
+  imageObject.height = newHeight;
+  imageObject.imageData = context.getImageData(0, 0, newWidth, newHeight);
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+}
+
+function rotate(degree) {
+  var imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      rad = -degree * Math.PI / 180,
+      context = workplace.getContext('2d'),
+      tempWorkplace = document.createElement('canvas'),
+      tempContext = tempWorkplace.getContext('2d'),
+      rotatedWidth, rotatedHeight;
+
+  tempWorkplace.width = width;
+  tempWorkplace.height = height;
+  tempContext.putImageData(imageObject.imageData, 0, 0);
+
+  rotatedWidth = Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad));
+  rotatedWidth = Math.ceil(rotatedWidth);
+  rotatedHeight = Math.abs(width * Math.sin(rad)) + Math.abs(height * Math.cos(rad));
+  rotatedHeight = Math.ceil(rotatedHeight);
+
+  workplace.width = rotatedWidth;
+  workplace.height = rotatedHeight;
+  context.translate(rotatedWidth / 2, rotatedHeight / 2);
+  context.rotate(rad);
+  context.translate(-width / 2, -height / 2);
+  context.drawImage(tempWorkplace, 0, 0);
+
+  imageObject.width = rotatedWidth;
+  imageObject.height = rotatedHeight;
+  imageObject.imageData = context.getImageData(0, 0, rotatedWidth, rotatedHeight);
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
 }
 
 })(window, document);

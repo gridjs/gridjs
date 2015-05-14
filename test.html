@@ -4,11 +4,17 @@
 <script>
 var canvas = document.getElementById('test');
 
-grid.open('blue.png', function(srcImageObj) {
+/*
+grid.open('red.png', function(srcImageObj) {
     var copy = srcImageObj.copy();
     grid.open('yellow.png', function(dstImageObj) {
-        dstImageObj.blend(copy.grayscale(), 10, -10).putImage(canvas);
+        dstImageObj.blend(copy.resize(100, 100).rotate(45).grayscale(), 0, 0).blend(srcImageObj.resize(120, 120), 50, 50).putImage(canvas);
     });
+});
+*/
+
+grid.open('red.png', function(imageObj) {
+  imageObj.resize(100,100).rotate(45).resize(200,200).putImage(canvas);
 });
 </script>
 </body>
