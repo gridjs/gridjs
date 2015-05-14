@@ -14,7 +14,7 @@ grid.open('red.png', function(srcImageObj) {
 */
 
 grid.open('red.png', function(imageObj) {
-  imageObj.resize(100,100).rotate(30).resize(200,200).crop(10,10,120,120).putImage(canvas);
+  imageObj.resize(100,100).rotate(30).update().putImage(canvas);
 });
 </script>
 </body>

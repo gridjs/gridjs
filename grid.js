@@ -398,4 +398,20 @@ ImageObject.prototype.crop = function(left, top, cropWidth, cropHeight) {
   return imageObject;
 };
 
+ImageObject.prototype.updateImageData = function() {
+  var imageObject = this;
+  imageObject.imageData = getImageDataFromPixel(imageObject.pixel);
+
+  return imageObject;
+};
+
+ImageObject.prototype.updatePixel = function() {
+  var imageObject = this;
+  imageObject.imageData = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+};
+
+ImageObject.prototype.update = ImageObject.prototype.updateImageData;
+
 })(window, document);
