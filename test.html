@@ -1,22 +1,14 @@
 <body>
 <canvas id="test"></canvas>
-<script src="grid.js"></script>
+<script src="gridjs.js"></script>
 <script>
-var canvas = document.getElementById('test');
+var g = gridjs,
+    canvas = document.getElementById('test');
 
-/*
-grid.open('red.png', function(srcImageObj) {
-    var copy = srcImageObj.copy();
-    grid.open('yellow.png', function(dstImageObj) {
-        dstImageObj.blend(copy.resize(100, 100).rotate(45).grayscale(), 0, 0).blend(srcImageObj.resize(120, 120), 50, 50).putImage(canvas);
-    });
-});
-*/
-
-gridjs.open('blue.png', function(imageObj) {
-  var blue2 = imageObj.load(30, 30, 100, 100);
-  blue2.rotate(180).update();
-  imageObj.show(canvas);
+g.open('lena.jpg', function(imageObj) {
+  imageObj.grayscale();
+  imageObj.pixel.G = g.gauss(imageObj.pixel.G, 5, 1, 2);
+  imageObj.update().show(canvas);
 });
 </script>
 </body>

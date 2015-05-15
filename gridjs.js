@@ -17,7 +17,7 @@ ImageObject = function() {
   this.imageData    = null;
   this.origin       = null;
   this.originLeft   = null;
-  this.originTop  = null;
+  this.originTop    = null;
 };
 
 function createWorkplace() {
@@ -73,44 +73,39 @@ function getPixelFromImageData(imageData) {
   return pixel;
 }
 
-/*
-function getPixelFromURL(url, callback) {
-  getImageDataFromURL(url, function(imageData) {
-    getPixelFromImageData(imageData, callback);
-  });
-}
+function getGrayPixelFromImageData(imageData) {
+  var x, y, index,
+      width = imageData.width,
+      height = imageData.height,
+      I = imageData.data,
+      pixel = {
+        'G' : [],
+        'a' : []
+      };
 
-function getPixel(image, callback) {
-  if (typeof(image) === 'string') {
-    getPixelFromURL(image, callback);
-  } else if (Array.isArray(image.r) === true) {
-    callback(image);
-  } else {
-    getPixelFromImageData(image, callback);
+  for (y = 0; y < height; y++) {
+    pixel.G[y] = [];
+    pixel.a[y] = [];
+    for (x = 0; x < width; x++) {
+      index = (y * width + x) * 4;
+      pixel.G[y][x] = I[index];
+      pixel.a[y][x] = I[index + 3] / 255;
+    }
   }
-}
 
-function getImageData(image, callback) {
-  if (typeof(image) === 'string') {
-    getImageDataFromURL(image, callback);
-  } else if (Array.isArray(image.r) === true) {
-    callback(getImageDataFromPixel(image));
-  } else {
-    callback(image);
-  }
+  pixel.r = pixel.G;
+  pixel.g = pixel.G;
+  pixel.b = pixel.G;
+
+  return pixel;
 }
-*/
 
 function getImageDataFromPixel(pixel) {
-  workplace = workplace || createWorkplace();
   var x, y, index,
       width = pixel.r[0].length,
       height = pixel.r.length,
       context = workplace.getContext('2d'),
       imageData = context.createImageData(width, height);
-
-  workplace.width = width;
-  workplace.height = height;
 
   for (y = 0; y < height; y++) {
     for (x = 0; x < width; x++) {
@@ -187,6 +182,267 @@ gridjs.getImageObjectFromPixel = function(pixel) {
     return imageObject;
 };
 
+gridjs.convolution = function(srcArray, maskArray) {
+  var x, y, mX, mY, cX, cY, value,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length,
+      maskWidth = maskArray[0].length,
+      maskHeight = maskArray.length,
+      halfMaskWidth = Math.round(maskWidth / 2) - 1,
+      halfMaskHeight = Math.round(maskHeight / 2) - 1;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      value = 0;
+      for (mY = 0; mY < maskHeight; mY++) {
+        for (mX = 0; mX < maskWidth; mX ++) {
+          cX = x - halfMaskWidth + mX;
+          cY = y - halfMaskHeight + mY;
+          if (cX >= 0 && cX < width && cY >= 0 && cY < height) {
+            value += srcArray[cY][cX] * maskArray[mY][mX];
+          }
+        }
+      }
+      newArray[y][x] = value;
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.conv = gridjs.convolution;
+
+gridjs.abs = function(srcArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = Math.abs(srcArray[y][x]);
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.square = function(srcArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = srcArray[y][x] * srcArray[y][x];
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.sqrt = function(srcArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = Math.sqrt(srcArray[y][x]);
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.gauseCore = function(size, sigma, derivative) {
+  var x, y, deltaX, deltaY,
+      sum = 0,
+      halfSize = Math.round(size / 2),
+      core = [];
+
+  sigma = sigma || 1;
+
+  for (y = 0; y < size; y++) {
+    core[y] = [];
+    for (x = 0; x < size; x++) {
+      if (x < halfSize && y < halfSize) {
+        deltaX = x - halfSize + 1;
+        deltaY = y - halfSize + 1;
+        switch (derivative) {
+          case 0:
+            core[y][x] = -deltaX *
+                Math.exp(-(deltaX * deltaX + deltaY * deltaY) / (2 * sigma * sigma)) /
+                (sigma * sigma * sigma);
+            break;
+          case 1:
+            core[y][x] = -deltaY *
+                Math.exp(-(deltaX * deltaX + deltaY * deltaY) / (2 * sigma * sigma)) /
+                (sigma * sigma * sigma);
+            break;
+          case 2:
+            core[y][x] = deltaX * deltaY *
+                Math.exp(-(deltaX * deltaX + deltaY * deltaY) / (2 * sigma * sigma)) /
+                (sigma * sigma * sigma * sigma * sigma);
+            break;
+          default:
+            core[y][x] = Math.exp(-(deltaX * deltaX + deltaY * deltaY) / (2 * sigma * sigma)) /
+                sigma;
+        }
+      } else if (x < halfSize) {
+        if (derivative === 1 || derivative === 2) {
+          core[y][x] = -core[size - y - 1][x];
+        } else {
+          core[y][x] = core[size - y - 1][x];
+        }
+      } else if (y < halfSize) {
+        if (derivative === 0 || derivative === 2) {
+          core[y][x] = -core[y][size - x - 1];
+        } else {
+          core[y][x] = core[y][size - x - 1];
+        }
+      } else {
+        if (derivative === 0 || derivative === 1) {
+          core[y][x] = -core[size - y - 1][size - x - 1];
+        } else {
+          core[y][x] = core[size - y - 1][size - x - 1];
+        }
+      }
+
+      sum += Math.abs(core[y][x]);
+    }
+  }
+
+  if (derivative !== undefined) {
+    sum = sum / 10;
+  }
+
+  for (y = 0; y < size; y++) {
+    for (x = 0; x < size; x++) {
+      core[y][x] /= sum;
+    }
+  }
+
+  return core;
+};
+
+gridjs.gauss = function(srcArray, size, sigma, derivative) {
+  var mask = gridjs.gauseCore(size, sigma, derivative);
+
+  return gridjs.convolution(srcArray, mask);
+};
+
+gridjs.add = function(srcArray, dstArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = srcArray[y][x] + dstArray[y][x];
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.minus = function(srcArray, dstArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = srcArray[y][x] - dstArray[y][x];
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.multiply = function(srcArray, dstArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = srcArray[y][x] * 
+          Array.isArray(dstArray) ? dstArray[y][x] : dstArray;
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.divide = function(srcArray, dstArray) {
+  var x, y,
+      newArray = [],
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = srcArray[y][x] /
+          Array.isArray(dstArray) ? dstArray[y][x] : dstArray;
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.zeros = function(width, height) {
+  var x, y,
+      newArray = [];
+
+  if (Array.isArray(width)) {
+    height = width.length;
+    width = width[0].length;
+  }
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = 0;
+    }
+  }
+
+  return newArray;
+};
+
+gridjs.ones = function(width, height) {
+  var x, y,
+      newArray = [];
+
+  if (Array.isArray(width)) {
+    height = width.length;
+    width = width[0].length;
+  }
+
+  for (y = 0; y < height; y++) {
+    newArray[y] = [];
+    for (x = 0; x < width; x++) {
+      newArray[y][x] = 1;
+    }
+  }
+
+  return newArray;
+};
+
 ImageObject.prototype.grayscale = function() {
   var x, y, gray,
       imageObject = this,
@@ -204,7 +460,7 @@ ImageObject.prototype.grayscale = function() {
       gray = 0.299 * imageObject.pixel.r[y][x] +
              0.587 * imageObject.pixel.g[y][x] +
              0.114 * imageObject.pixel.b[y][x];
-      pixel.G[y][x] = gray;
+      pixel.G[y][x] = Math.round(gray);
       pixel.a[y][x] = imageObject.pixel.a[y][x];
     }
   }
@@ -346,7 +602,12 @@ ImageObject.prototype.resize = function(newWidth, newHeight) {
   imageObject.width = newWidth;
   imageObject.height = newHeight;
   imageObject.imageData = context.getImageData(0, 0, newWidth, newHeight);
-  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
 
   return imageObject;
 };
@@ -375,7 +636,12 @@ ImageObject.prototype.rotate = function(degree) {
   imageObject.width = rotatedWidth;
   imageObject.height = rotatedHeight;
   imageObject.imageData = context.getImageData(0, 0, rotatedWidth, rotatedHeight);
-  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
 
   return imageObject;
 };
@@ -392,7 +658,12 @@ ImageObject.prototype.crop = function(left, top, cropWidth, cropHeight) {
   imageObject.width = cropWidth;
   imageObject.height = cropHeight;
   imageObject.imageData = context.getImageData(0, 0, cropWidth, cropHeight);
-  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
 
   return imageObject;
 };
@@ -400,6 +671,12 @@ ImageObject.prototype.crop = function(left, top, cropWidth, cropHeight) {
 ImageObject.prototype.updateImageData = function() {
   var imageObject = this,
       context = workplace.getContext('2d');
+
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel.r = imageObject.pixel.G;
+    imageObject.pixel.g = imageObject.pixel.G;
+    imageObject.pixel.b = imageObject.pixel.G;
+  }
 
   imageObject.imageData = getImageDataFromPixel(imageObject.pixel);
   imageObject.width = imageObject.imageData.width;
@@ -411,7 +688,12 @@ ImageObject.prototype.updateImageData = function() {
     context.putImageData(imageObject.origin.imageData, 0, 0);
     context.putImageData(imageObject.imageData, imageObject.originLeft, imageObject.originTop);
     imageObject.origin.imageData = context.getImageData(0, 0, imageObject.origin.width, imageObject.origin.height);
-    imageObject.origin.pixel = getPixelFromImageData(imageObject.origin.imageData);
+    
+    if (imageObject.pixel.G !== undefined && imageObject.origin.pixel.G !== undefined) {
+      imageObject.origin.pixel = getGrayPixelFromImageData(imageObject.origin.imageData);
+    } else {
+      imageObject.origin.pixel = getPixelFromImageData(imageObject.origin.imageData);
+    }
   }
 
   return imageObject;
@@ -421,7 +703,12 @@ ImageObject.prototype.updatePixel = function() {
   var imageObject = this,
       context = workplace.getContext('2d');
 
-  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
+
   imageObject.width = imageObject.imageData.width;
   imageObject.height = imageObject.imageData.height;
 
@@ -431,7 +718,12 @@ ImageObject.prototype.updatePixel = function() {
     context.putImageData(imageObject.origin.imageData, 0, 0);
     context.putImageData(imageObject.imageData, imageObject.originLeft, imageObject.originTop);
     imageObject.origin.imageData = context.getContext(0, 0, imageObject.origin.width, imageObject.origin.height);
-    imageObject.origin.pixel = imageObject.origin.getPixelFromImageData(imageObject.origin.imageData);
+    
+    if (imageObject.pixel.G !== undefined && imageObject.origin.pixel.G !== undefined) {
+      imageObject.origin.pixel = getGrayPixelFromImageData(imageObject.origin.imageData);
+    } else {
+      imageObject.origin.pixel = getPixelFromImageData(imageObject.origin.imageData);
+    }
   }
 
   return imageObject;
@@ -453,7 +745,12 @@ ImageObject.prototype.paste = function(srcImageObject, left, top) {
   context.putImageData(srcImageObject, left, top);
 
   imageObject.imageData = context.getImageData(0, 0, width, height);
-  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  if (imageObject.pixel.G !== undefined && srcImageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
 
   return imageObject;
 };
@@ -467,6 +764,19 @@ ImageObject.prototype.blank = function(width, height) {
   imageObject.height = height;
   imageObject.imageData = imageData;
   imageObject.pixel = getPixelFromImageData(imageData);
+
+  return imageObject;
+};
+
+ImageObject.prototype.grayBlank = function(width, height) {
+  var imageObject = new ImageObject(),
+      context = workplace.getContext('2d'),
+      imageData = context.createImageData(width, height);
+
+  imageObject.width = width;
+  imageObject.height = height;
+  imageObject.imageData = imageData;
+  imageObject.pixel = getGrayPixelFromImageData(imageData);
 
   return imageObject;
 };
@@ -487,6 +797,12 @@ ImageObject.prototype.load = function(left, top, width, height) {
   newImageObject.origin = imageObject;
   newImageObject.originLeft = left;
   newImageObject.originTop = top;
+
+  if (imageObject.pixel.G !== undefined) {
+    newImageObject.pixel = getGrayPixelFromImageData(newImageObject.imageData);
+  } else {
+    newImageObject.pixel = getPixelFromImageData(newImageObject.imageData);
+  }
 
   return newImageObject;
 };
