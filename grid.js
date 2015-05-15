@@ -5,7 +5,7 @@
  */
 (function(window, document, undefined) {'use strict';
 
-var grid = window.grid = window.grid || {},
+var gridjs = window.gridjs = window.gridjs || {},
     workplace = createWorkplace(),
     imageDataWorkplace = createWorkplace(),
     ImageObject;
@@ -135,19 +135,19 @@ function getImageFromImageData(imageData) {
   return imageDataWorkplace;
 }
 
-grid.open = function(image, callback) {
+gridjs.getImageObject = function(image, callback) {
   if (typeof(image) === 'string') {
-    grid.getImageObjectFromURL(image, callback);
+    gridjs.getImageObjectFromURL(image, callback);
   } else if (Array.isArray(image.r) === true) {
-    callback(grid.getImageObjectFromPixel(image));
+    callback(gridjs.getImageObjectFromPixel(image));
   } else if (typeof(image) === 'object') {
-    callback(grid.getImageObjectFromImageData(image));
+    callback(gridjs.getImageObjectFromImageData(image));
   }
 };
 
-grid.getImageObject = grid.open;
+gridjs.open = gridjs.getImageObject;
 
-grid.getImageObjectFromURL = function(url, callback) {
+gridjs.getImageObjectFromURL = function(url, callback) {
   getImageDataFromURL(url, function(imageData) {
     var imageObject = new ImageObject();
     imageObject.imageData = imageData;
@@ -159,7 +159,7 @@ grid.getImageObjectFromURL = function(url, callback) {
   });
 };
 
-grid.getImageObjectFromImageData = function(imageData) {
+gridjs.getImageObjectFromImageData = function(imageData) {
   var width = imageData.width,
       height = imageData.height,
       pixel = getPixelFromImageData(imageData),
@@ -173,7 +173,7 @@ grid.getImageObjectFromImageData = function(imageData) {
   return imageObject;
 };
 
-grid.getImageObjectFromPixel = function(pixel) {
+gridjs.getImageObjectFromPixel = function(pixel) {
   var width = pixel[0].length,
       height = pixel.length,
       imageData = getImageDataFromPixel(pixel),
@@ -193,25 +193,24 @@ ImageObject.prototype.grayscale = function() {
       width = imageObject.width,
       height = imageObject.height,
       pixel = {
-        'r' : [],
-        'g' : [],
-        'b' : [],
+        'G' : [],
         'a' : []
       };
     
   for (y = 0; y < height; y++) {
-    pixel.r[y] = [];
-    pixel.g[y] = [];
-    pixel.b[y] = [];
+    pixel.G[y] = [];
     pixel.a[y] = [];
     for (x = 0; x < width; x++) {
       gray = 0.299 * imageObject.pixel.r[y][x] +
              0.587 * imageObject.pixel.g[y][x] +
              0.114 * imageObject.pixel.b[y][x];
-      pixel.r[y][x] = pixel.g[y][x] = pixel.b[y][x] = gray;
+      pixel.G[y][x] = gray;
       pixel.a[y][x] = imageObject.pixel.a[y][x];
     }
   }
+  pixel.r = pixel.G;
+  pixel.g = pixel.G;
+  pixel.b = pixel.G;
 
   imageObject.pixel = pixel;
   imageObject.imageData = getImageDataFromPixel(pixel);
@@ -219,7 +218,7 @@ ImageObject.prototype.grayscale = function() {
   return imageObject;
 };
 
-ImageObject.prototype.putImage = function(canvas) {
+ImageObject.prototype.show = function(canvas) {
   var context,
       imageObject = this;
 
@@ -362,9 +361,9 @@ ImageObject.prototype.rotate = function(degree) {
       rotatedWidth, rotatedHeight;
 
   rotatedWidth = Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad));
-  rotatedWidth = Math.ceil(rotatedWidth);
+  rotatedWidth = Math.round(rotatedWidth);
   rotatedHeight = Math.abs(width * Math.sin(rad)) + Math.abs(height * Math.cos(rad));
-  rotatedHeight = Math.ceil(rotatedHeight);
+  rotatedHeight = Math.round(rotatedHeight);
 
   workplace.width = rotatedWidth;
   workplace.height = rotatedHeight;
@@ -403,6 +402,8 @@ ImageObject.prototype.updateImageData = function() {
       context = workplace.getContext('2d');
 
   imageObject.imageData = getImageDataFromPixel(imageObject.pixel);
+  imageObject.width = imageObject.imageData.width;
+  imageObject.height = imageObject.imageData.height;
 
   if (imageObject.origin !== null) {
     workplace.width = imageObject.origin.width;
@@ -421,6 +422,8 @@ ImageObject.prototype.updatePixel = function() {
       context = workplace.getContext('2d');
 
   imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  imageObject.width = imageObject.imageData.width;
+  imageObject.height = imageObject.imageData.height;
 
   if (imageObject.origin !== null) {
     workplace.width = imageObject.origin.width;
