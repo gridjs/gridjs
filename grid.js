@@ -15,6 +15,9 @@ ImageObject = function() {
   this.height       = null;
   this.pixel        = null;
   this.imageData    = null;
+  this.origin       = null;
+  this.originLeft   = null;
+  this.originTop  = null;
 };
 
 function createWorkplace() {
@@ -189,7 +192,6 @@ ImageObject.prototype.grayscale = function() {
       imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
-      grayImageObject = new ImageObject(),
       pixel = {
         'r' : [],
         'g' : [],
@@ -211,12 +213,10 @@ ImageObject.prototype.grayscale = function() {
     }
   }
 
-  grayImageObject.pixel = pixel;
-  grayImageObject.imageData = getImageDataFromPixel(pixel);
-  grayImageObject.height = height;
-  grayImageObject.width = width;
+  imageObject.pixel = pixel;
+  imageObject.imageData = getImageDataFromPixel(pixel);
 
-  return grayImageObject;
+  return imageObject;
 };
 
 ImageObject.prototype.putImage = function(canvas) {
@@ -399,15 +399,37 @@ ImageObject.prototype.crop = function(left, top, cropWidth, cropHeight) {
 };
 
 ImageObject.prototype.updateImageData = function() {
-  var imageObject = this;
+  var imageObject = this,
+      context = workplace.getContext('2d');
+
   imageObject.imageData = getImageDataFromPixel(imageObject.pixel);
+
+  if (imageObject.origin !== null) {
+    workplace.width = imageObject.origin.width;
+    workplace.height = imageObject.origin.height;
+    context.putImageData(imageObject.origin.imageData, 0, 0);
+    context.putImageData(imageObject.imageData, imageObject.originLeft, imageObject.originTop);
+    imageObject.origin.imageData = context.getImageData(0, 0, imageObject.origin.width, imageObject.origin.height);
+    imageObject.origin.pixel = getPixelFromImageData(imageObject.origin.imageData);
+  }
 
   return imageObject;
 };
 
 ImageObject.prototype.updatePixel = function() {
-  var imageObject = this;
-  imageObject.imageData = getPixelFromImageData(imageObject.imageData);
+  var imageObject = this,
+      context = workplace.getContext('2d');
+
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  if (imageObject.origin !== null) {
+    workplace.width = imageObject.origin.width;
+    workplace.height = imageObject.origin.height;
+    context.putImageData(imageObject.origin.imageData, 0, 0);
+    context.putImageData(imageObject.imageData, imageObject.originLeft, imageObject.originTop);
+    imageObject.origin.imageData = context.getContext(0, 0, imageObject.origin.width, imageObject.origin.height);
+    imageObject.origin.pixel = imageObject.origin.getPixelFromImageData(imageObject.origin.imageData);
+  }
 
   return imageObject;
 };
@@ -444,6 +466,26 @@ ImageObject.prototype.blank = function(width, height) {
   imageObject.pixel = getPixelFromImageData(imageData);
 
   return imageObject;
+};
+
+ImageObject.prototype.load = function(left, top, width, height) {
+  var imageObject = this,
+      newImageObject = new ImageObject(),
+      context = workplace.getContext('2d');
+
+  workplace.width = width;
+  workplace.height = height;
+  context.putImageData(imageObject.imageData, -left, -top);
+
+  newImageObject.width = width;
+  newImageObject.height = height;
+  newImageObject.imageData = context.getImageData(0, 0, width, height);
+  newImageObject.pixel = getPixelFromImageData(newImageObject.imageData);
+  newImageObject.origin = imageObject;
+  newImageObject.originLeft = left;
+  newImageObject.originTop = top;
+
+  return newImageObject;
 };
 
 })(window, document);

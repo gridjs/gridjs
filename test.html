@@ -13,8 +13,11 @@ grid.open('red.png', function(srcImageObj) {
 });
 */
 
-grid.open('red.png', function(imageObj) {
-  imageObj.resize(100,100).rotate(30).update().putImage(canvas);
+grid.open('blue.png', function(imageObj) {
+  var blue2 = imageObj.load(30, 30, 100, 100);
+  blue2.grayscale().update();
+  //blue2.putImage(canvas);
+  imageObj.putImage(canvas);
 });
 </script>
 </body>
