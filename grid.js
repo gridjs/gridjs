@@ -414,4 +414,36 @@ ImageObject.prototype.updatePixel = function() {
 
 ImageObject.prototype.update = ImageObject.prototype.updateImageData;
 
+ImageObject.prototype.paste = function(srcImageObject, left, top) {
+  var imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      context = workplace.getContext('2d');
+  left = left || 0;
+  top = top || 0;
+
+  workplace.width = width;
+  workplace.height = height;
+  context.putImageData(imageObject, 0, 0);
+  context.putImageData(srcImageObject, left, top);
+
+  imageObject.imageData = context.getImageData(0, 0, width, height);
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+};
+
+ImageObject.prototype.blank = function(width, height) {
+  var imageObject = new ImageObject(),
+      context = workplace.getContext('2d'),
+      imageData = context.createImageData(width, height);
+
+  imageObject.width = width;
+  imageObject.height = height;
+  imageObject.imageData = imageData;
+  imageObject.pixel = getPixelFromImageData(imageData);
+
+  return imageObject;
+};
+
 })(window, document);
