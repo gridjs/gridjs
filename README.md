@@ -21,7 +21,7 @@ gridjs.open(url, function(im) {
 });
 ```
 
-You may process `im` with methods in API Docs. For example, convert `im` to grayscale
+You may process `im` with methods in [API Docs](http://gridjs.org/docs/API.html). For example, convert `im` to grayscale
 
 ```
 im.grayscale();
