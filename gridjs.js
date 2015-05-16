@@ -807,4 +807,39 @@ ImageObject.prototype.load = function(left, top, width, height) {
   return newImageObject;
 };
 
+ImageObject.prototype.flip = function(axis) {
+  var imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      context = workplace.getContext('2d'),
+      imageDataContext = imageDataWorkplace.getContext('2d');
+
+  workplace.width = width;
+  workplace.height = height;
+  context.translate(width / 2, height / 2);
+
+  imageDataWorkplace.width = width;
+  imageDataWorkplace.height = height;
+  imageDataContext.putImageData(imageObject.imageData, 0, 0);
+
+  if (axis === 0) {
+    context.scale(-1, 1);
+  } else if (axis === 1) {
+    context.scale(1, -1);
+  } else if (axis === 2) {
+    context.scale(-1, -1);
+  }
+
+  context.drawImage(imageDataWorkplace, -width / 2, -height / 2);
+
+  imageObject.imageData = context.getImageData(0, 0, width, height);
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
+
+  return imageObject;
+};
+
 })(window, document);

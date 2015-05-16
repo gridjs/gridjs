@@ -6,7 +6,7 @@ var g = gridjs,
     canvas = document.getElementById('test');
 
 g.open('lena.jpg', function(imageObj) {
-  imageObj.grayscale();
+  imageObj.grayscale().flip(0);
   imageObj.pixel.G = g.gauss(imageObj.pixel.G, 5, 1, 2);
   imageObj.update().show(canvas);
 });
