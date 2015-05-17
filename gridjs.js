@@ -874,4 +874,27 @@ ImageObject.prototype.flip = function(axis) {
   return imageObject;
 };
 
+ImageObject.prototype.reverse = function() {
+  var x, y,
+      imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height;
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      if (imageObject.pixel.G !== undefined) {
+        imageObject.pixel.G[y][x] = 255 - imageObject.pixel.G[y][x];
+      } else {
+        imageObject.pixel.r[y][x] = 255 - imageObject.pixel.r[y][x];
+        imageObject.pixel.g[y][x] = 255 - imageObject.pixel.g[y][x];
+        imageObject.pixel.b[y][x] = 255 - imageObject.pixel.b[y][x];
+      }
+    }
+  }
+
+  imageObject.imageData = getImageDataFromPixel(imageObject.pixel);
+
+  return imageObject;
+};
+
 })(window, document);
