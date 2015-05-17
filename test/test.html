@@ -5,11 +5,26 @@
 var g = gridjs,
     canvas = document.getElementById('test');
 
-g.open('lena.jpg', function(imageObj) {
-  imageObj.grayscale();
-  imageObj.pixel.G = g.gauss(imageObj.pixel.G, 5, 1, 2);
-  g.norm(imageObj.pixel.G, 0, 255);
-  imageObj.update().show(canvas);
+g.open('nyt.jpg', function(im) {
+  var newR, newG, newB;
+
+  newR = g.multiply(im.pixel.r, 0.393);
+  newR = g.add(newR, g.multiply(im.pixel.g, 0.769));
+  newR = g.add(newR, g.multiply(im.pixel.b, 0.189));
+
+  newG = g.multiply(im.pixel.g, 0.349);
+  newG = g.add(newG, g.multiply(im.pixel.g, 0.686));
+  newG = g.add(newG, g.multiply(im.pixel.b, 0.168));
+
+  newB = g.multiply(im.pixel.r, 0.272);
+  newB = g.add(newB, g.multiply(im.pixel.g, 0.534));
+  newB = g.add(newB, g.multiply(im.pixel.b, 0.131));
+
+  im.pixel.r = newR;
+  im.pixel.g = newG;
+  im.pixel.b = newB;
+
+  im.update().show(canvas);
 });
 </script>
 </body>

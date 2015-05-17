@@ -379,12 +379,14 @@ gridjs.multiply = function(srcArray, dstArray) {
     newArray[y] = [];
     for (x = 0; x < width; x++) {
       newArray[y][x] = srcArray[y][x] * 
-          Array.isArray(dstArray) ? dstArray[y][x] : dstArray;
+          (Array.isArray(dstArray) ? dstArray[y][x] : dstArray);
     }
   }
 
   return newArray;
 };
+
+gridjs.mul = gridjs.multiply;
 
 gridjs.divide = function(srcArray, dstArray) {
   var x, y,
@@ -396,12 +398,14 @@ gridjs.divide = function(srcArray, dstArray) {
     newArray[y] = [];
     for (x = 0; x < width; x++) {
       newArray[y][x] = srcArray[y][x] /
-          Array.isArray(dstArray) ? dstArray[y][x] : dstArray;
+          (Array.isArray(dstArray) ? dstArray[y][x] : dstArray);
     }
   }
 
   return newArray;
 };
+
+gridjs.div = gridjs.divide;
 
 gridjs.zeros = function(width, height) {
   var x, y,
