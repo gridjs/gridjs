@@ -441,7 +441,7 @@ gridjs.ones = function(width, height) {
   return newArray;
 };
 
-gridjs.normalization = function(srcArray, min, max) {
+gridjs.normalize = function(srcArray, min, max) {
   var x, y, minValue, maxValue,
       width = srcArray[0].length,
       height = srcArray.length;
@@ -469,7 +469,7 @@ gridjs.normalization = function(srcArray, min, max) {
   return srcArray;
 };
 
-gridjs.norm = gridjs.normalization;
+gridjs.norm = gridjs.normalize;
 
 ImageObject.prototype.grayscale = function() {
   var x, y, gray,
