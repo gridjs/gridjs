@@ -408,37 +408,30 @@ gridjs.divide = function(srcArray, dstArray) {
 gridjs.div = gridjs.divide;
 
 gridjs.zeros = function(width, height) {
-  var x, y,
-      newArray = [];
-
   if (Array.isArray(width)) {
     height = width.length;
     width = width[0].length;
   }
 
-  for (y = 0; y < height; y++) {
-    newArray[y] = [];
-    for (x = 0; x < width; x++) {
-      newArray[y][x] = 0;
-    }
-  }
-
-  return newArray;
+  return gridjs.ones(width, height, 0);
 };
 
-gridjs.ones = function(width, height) {
+gridjs.ones = function(width, height, value) {
   var x, y,
       newArray = [];
 
   if (Array.isArray(width)) {
+    value = height;
     height = width.length;
     width = width[0].length;
   }
 
+  value = (value === undefined) ? 1 : value;
+
   for (y = 0; y < height; y++) {
     newArray[y] = [];
     for (x = 0; x < width; x++) {
-      newArray[y][x] = 1;
+      newArray[y][x] = value;
     }
   }
 
@@ -474,6 +467,20 @@ gridjs.normalize = function(srcArray, min, max) {
 };
 
 gridjs.norm = gridjs.normalize;
+
+gridjs.cutoff = function(srcArray, max) {
+  var x, y,
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      srcArray[y][x] = Math.min(srcArray[y][x], max);
+    }
+  }
+
+  return srcArray;
+};
 
 ImageObject.prototype.grayscale = function() {
   var x, y, gray,
@@ -595,23 +602,42 @@ ImageObject.prototype.copy = function() {
       height = imageObject.height,
       newImageObject = new ImageObject(),
       pixel = {
-        'r' : [],
-        'g' : [],
-        'b' : [],
         'a' : []
       };
 
+  if (imageObject.pixel.G !== undefined) {
+    pixel.G = [];
+  } else {
+    pixel.r = [];
+    pixel.g = [];
+    pixel.b = [];
+  }
+
   for (y = 0; y < height; y++) {
-    pixel.r[y] = [];
-    pixel.g[y] = [];
-    pixel.b[y] = [];
+    if (imageObject.pixel.G !== undefined) {
+      pixel.G[y] = [];
+    } else {
+      pixel.r[y] = [];
+      pixel.g[y] = [];
+      pixel.b[y] = [];
+    }
     pixel.a[y] = [];
     for (x = 0; x < width; x++) {
-      pixel.r[y][x] = imageObject.pixel.r[y][x];
-      pixel.g[y][x] = imageObject.pixel.g[y][x];
-      pixel.b[y][x] = imageObject.pixel.b[y][x];
+      if (imageObject.pixel.G !== undefined) {
+        pixel.G[y][x] = imageObject.pixel.G[y][x];
+      } else {
+        pixel.r[y][x] = imageObject.pixel.r[y][x];
+        pixel.g[y][x] = imageObject.pixel.g[y][x];
+        pixel.b[y][x] = imageObject.pixel.b[y][x];
+      }
       pixel.a[y][x] = imageObject.pixel.a[y][x];
     }
+  }
+
+  if (imageObject.pixel.G !== undefined) {
+    pixel.r = pixel.G;
+    pixel.g = pixel.G;
+    pixel.b = pixel.G;
   }
 
   newImageObject.pixel = pixel;

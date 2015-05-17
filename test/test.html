@@ -5,7 +5,11 @@
 var g = gridjs,
     canvas = document.getElementById('test');
 
-g.open('nyt.jpg', function(im) {
+g.open('lake.jpg', function(im) {
+  sketch(im).show(canvas);
+});
+
+function sepia(im) {
   var newR, newG, newB;
 
   newR = g.multiply(im.pixel.r, 0.393);
@@ -24,7 +28,40 @@ g.open('nyt.jpg', function(im) {
   im.pixel.g = newG;
   im.pixel.b = newB;
 
-  im.update().show(canvas);
-});
+  im.update();
+
+  return im;
+}
+
+function sketch(im) {
+  var im2, dodge,
+      mask = [
+        [-1, -4, -7, -4, -1],   
+        [-4, -16, -26, -16, -4],   
+        [-7, -26, 505, -26, -7],  
+        [-4, -16, -26, -16, -4],   
+        [-1, -4, -7, -4, -1]
+      ];
+
+  mask = g.div(mask, 273);
+
+  im.grayscale();
+  im2 = im.copy().reverse();
+  im2.pixel.G = g.gauss(im2.pixel.G, 5);
+  im2.pixel.G = g.norm(im2.pixel.G, 0, 255);
+  
+  dodge = g.ones(im.pixel.G, 256);
+  dodge = g.minus(dodge, im2.pixel.G);
+  dodge = g.div(im2.pixel.G, dodge);
+  dodge = g.mul(im.pixel.G, dodge);
+  dodge = g.add(im.pixel.G, dodge);
+  dodge = g.cutoff(dodge, 255);
+  dodge = g.conv(dodge, mask);
+
+  im.pixel.G = dodge;
+  im.update();
+
+  return im;
+}
 </script>
 </body>
