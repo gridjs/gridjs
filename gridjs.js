@@ -321,12 +321,10 @@ gridjs.gauseCore = function(size, sigma, derivative) {
   }
 
   if (derivative !== undefined) {
-    sum = sum / 10;
-  }
-
-  for (y = 0; y < size; y++) {
-    for (x = 0; x < size; x++) {
-      core[y][x] /= sum;
+    for (y = 0; y < size; y++) {
+      for (x = 0; x < size; x++) {
+        core[y][x] /= sum;
+      }
     }
   }
 
@@ -442,6 +440,36 @@ gridjs.ones = function(width, height) {
 
   return newArray;
 };
+
+gridjs.normalization = function(srcArray, min, max) {
+  var x, y, minValue, maxValue,
+      width = srcArray[0].length,
+      height = srcArray.length;
+
+  min = (min === undefined) ? 0 : min;
+  max = (max === undefined) ? 1 : max;
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      if (minValue === undefined || minValue > srcArray[y][x]) {
+        minValue = srcArray[y][x];
+      }
+      if (maxValue === undefined || maxValue < srcArray[y][x]) {
+        maxValue = srcArray[y][x];
+      }
+    }
+  }
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      srcArray[y][x] = (srcArray[y][x] - minValue) * (max - min) / (maxValue - minValue) + min;
+    }
+  }
+
+  return srcArray;
+};
+
+gridjs.norm = gridjs.normalization;
 
 ImageObject.prototype.grayscale = function() {
   var x, y, gray,
