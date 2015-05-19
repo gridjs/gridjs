@@ -927,4 +927,13 @@ ImageObject.prototype.reverse = function() {
   return imageObject;
 };
 
+ImageObject.prototype.rgb = function() {
+  var x, y,
+      imageObject = this;
+
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+}
+
 })(window, document);

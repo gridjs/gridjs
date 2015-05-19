@@ -6,8 +6,20 @@ var g = gridjs,
     canvas = document.getElementById('test');
 
 g.open('nyt.jpg', function(im) {
-  im.resize(150, 100).grayscale();
-  console.log(harris(im.pixel.G));
+  var H, corners, i;
+
+  im.grayscale();
+  H = harris(im.pixel.G);
+  corners = getHarrisPoint(H, 0.05, 10);
+  im.rgba();
+
+  for (i = 0; i < corners.length; i++) {
+    im.pixel.r[corners[i].y][corners[i].x] = 255;
+    im.pixel.g[corners[i].y][corners[i].x] = 0;
+    im.pixel.b[corners[i].y][corners[i].x] = 0;
+  }
+
+  im.update().show(canvas);
 });
 
 function harris(srcArray) {
@@ -31,6 +43,46 @@ function harris(srcArray) {
       g.norm(H);
 
       return H;
+}
+
+function getHarrisPoint(harrisArray, threshold, minDistance) {
+  var x, y, i, j, distance2,
+      minDistance2 = minDistance * minDistance,
+      index = 0,
+      width = harrisArray[0].length,
+      height = harrisArray.length,
+      points = [];
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      if (harrisArray[y][x] >= threshold) {
+        points[index++] = {
+          'x' : x,
+          'y' : y,
+          'h' : harrisArray[y][x]
+        }
+      }
+    }
+  }
+
+  points.sort(function(a, b) {
+    return b.h - a.h;
+  });
+
+  for (i = 0; i < points.length; i++) {
+    for (j = 0; j < i; j++) {
+      distance2 = (points[i].x - points[j].x) * (points[i].x - points[j].x) +
+                  (points[i].y - points[j].y) * (points[i].y - points[j].y);
+
+      if (distance2 < minDistance2) {
+        points.splice(i, 1);
+        i--;
+        break;
+      }
+    }
+  }
+
+  return points;
 }
 </script>
 </body>
