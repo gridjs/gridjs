@@ -22,10 +22,8 @@ gridjs.open('cube.jpg', function(im) {
 });
 
 function harris(srcArray) {
-  var x, y, imx, imy, wxx, wyy, wxy, wdet, wtr, H,
-      g = gridjs,
-      width = srcArray[0].length,
-      height = srcArray.length;
+  var imx, imy, wxx, wyy, wxy, wdet, wtr, H,
+      g = gridjs;
 
       imx = g.gauss(srcArray, 5, 1, 0);
       imy = g.gauss(srcArray, 5, 1, 1);

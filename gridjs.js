@@ -928,12 +928,11 @@ ImageObject.prototype.reverse = function() {
 };
 
 ImageObject.prototype.rgba = function() {
-  var x, y,
-      imageObject = this;
+  var imageObject = this;
 
   imageObject.pixel = getPixelFromImageData(imageObject.imageData);
 
   return imageObject;
-}
+};
 
 })(window, document);
