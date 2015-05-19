@@ -943,10 +943,11 @@ ImageObject.prototype.plot = function(points, style) {
       dotStyle = null,
       context = workplace.getContext('2d');
 
-  workplace.width = imageObject.width;
-  workplace.height = imageObject.height;
-
-  context.putImageData(imageObject.imageData, 0, 0);
+  if (imageObject.holdon !== true) {
+    workplace.width = imageObject.width;
+    workplace.height = imageObject.height;
+    context.putImageData(imageObject.imageData, 0, 0);
+  }
 
   if (typeof(points) === 'number' && typeof(style) === 'number') {
     points = [[points, style]];
@@ -1083,6 +1084,33 @@ ImageObject.prototype.plot = function(points, style) {
     }
   }
 
+  if (imageObject.holdon !== true) {
+    imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
+    if (imageObject.pixel.G !== undefined) {
+      imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+    } else {
+      imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+    }
+  }
+
+  return imageObject;
+};
+
+ImageObject.prototype.hold = function() {
+  var imageObject = this,
+      context = workplace.getContext('2d');
+
+  imageObject.holdon = true;
+  workplace.width = imageObject.width;
+  workplace.height = imageObject.height;
+  context.putImageData(imageObject.imageData, 0, 0);
+};
+
+ImageObject.prototype.flush = function() {
+  var imageObject = this,
+      context = workplace.getContext('2d');
+
+  imageObject.holdon = false;
   imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
   if (imageObject.pixel.G !== undefined) {
     imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);

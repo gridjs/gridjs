@@ -17,12 +17,13 @@ gridjs.open('1.png', function(im) {
     im3.resize(480, 360).rotate(-90).grayscale();
     v = pilkft(corners, im2.pixel.G, im3.pixel.G);
     
+    im.hold();
     for (i = 0; i < v.length; i++) {
       if (v[i].v.x * v[i].v.x + v[i].v.y * v[i].v.y < 2500)
         im.plot([[v[i].x, v[i].y], [v[i].x + v[i].v.x, v[i].y + v[i].v.y]], 'kx--');
     }
 
-    im.show(canvas);
+    im.flush().show(canvas);
   });
 });
 
