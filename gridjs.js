@@ -935,4 +935,166 @@ ImageObject.prototype.rgba = function() {
   return imageObject;
 };
 
+ImageObject.prototype.plot = function(points, style) {
+  var i, x, y, lX, lY, x0, y0, deltaX, deltaY, deltaL, eX, eY,
+      imageObject = this,
+      color = 'blue',
+      lineStyle = null,
+      dotStyle = null,
+      context = workplace.getContext('2d');
+
+  workplace.width = imageObject.width;
+  workplace.height = imageObject.height;
+
+  context.putImageData(imageObject.imageData, 0, 0);
+
+  if (typeof(points) === 'number' && typeof(style) === 'number') {
+    points = [[points, style]];
+    style = arguments[2];
+  } else if (typeof(points[0]) === 'number') {
+    points = [points];
+  }
+
+  if (/b/.test(style)) {
+    color = (imageObject.pixel.G !== undefined ? '#1D1D1D' : '#0000FF');
+  } else if (/g/.test(style)) {
+    color = (imageObject.pixel.G !== undefined ? '#969696' : '#00FF00');
+  } else if (/r/.test(style)) {
+    color = (imageObject.pixel.G !== undefined ? '#4C4C4C' : '#FF0000');
+  } else if (/c/.test(style)) {
+    color = (imageObject.pixel.G !== undefined ? '#B3B3B3' : '#00FFFF');
+  } else if (/m/.test(style)) {
+    color = (imageObject.pixel.G !== undefined ? '#696969' : '#FF00FF');
+  } else if (/y/.test(style)) {
+    color = (imageObject.pixel.G !== undefined ? '#E2E2E2' : '#FFFF00');
+  } else if (/k/.test(style)) {
+    color = '#000000';
+  } else if (/w/.test(style)) {
+    color = '#FFFFFF';
+  }
+
+  if (points.length === 1) {
+    lineStyle = null;
+  } else if (/--/.test(style)) {
+    lineStyle = 'solid';
+  } else if (/-/.test(style)) {
+    lineStyle = 'dashed';
+  } else if (/:/.test(style)) {
+    lineStyle = 'dotted';
+  } else if (style === undefined) {
+    lineStyle = 'solid';
+  }
+
+  if (/\./.test(style)) {
+    dotStyle = 'dot';
+  } else if (/o/.test(style)) {
+    dotStyle = 'circle';
+  } else if (/s/.test(style)) {
+    dotStyle = 'square';
+  } else if (/\*/.test(style)) {
+    dotStyle = 'star';
+  } else if (/\+/.test(style)) {
+    dotStyle = 'plus';
+  } else if (/x/.test(style)) {
+    dotStyle = 'cross';
+  }
+
+  context.strokeStyle = color;
+  context.fillStyle = color;
+
+  for (i = 0; i < points.length; i++) {
+    x = points[i][0];
+    y = points[i][1];
+    if (dotStyle === 'dot') {
+      context.beginPath();
+      context.arc(x, y, 2, 0, Math.PI * 2);
+      context.fill();
+    } else if (dotStyle === 'circle') {
+      context.beginPath();
+      context.arc(x, y, 3, 0, Math.PI * 2);
+      context.stroke();
+    } else if (dotStyle === 'square') {
+      context.beginPath();
+      context.rect(x - 2, y - 2, 5, 5);
+      context.fill();
+    } else if (dotStyle === 'star') {
+      context.beginPath();
+      context.moveTo(x - 3, y - 3);
+      context.lineTo(x + 3, y + 3);
+      context.moveTo(x - 3, y + 3);
+      context.lineTo(x + 3, y - 3);
+      context.moveTo(x, y - 5);
+      context.lineTo(x, y + 5);
+      context.moveTo(x - 5, y);
+      context.lineTo(x + 5, y);
+      context.stroke();
+    } else if (dotStyle === 'plus') {
+      context.beginPath();
+      context.moveTo(x, y - 5);
+      context.lineTo(x, y + 5);
+      context.moveTo(x - 5, y);
+      context.lineTo(x + 5, y);
+      context.stroke();
+    } else if (dotStyle === 'cross') {
+      context.beginPath();
+      context.moveTo(x - 3, y - 3);
+      context.lineTo(x + 3, y + 3);
+      context.moveTo(x - 3, y + 3);
+      context.lineTo(x + 3, y - 3);
+      context.stroke();
+    }
+
+    if (i > 0) {
+      x0 = Math.min(points[i - 1][0], x);
+      y0 = Math.min(points[i - 1][1], y);
+      x = Math.max(points[i - 1][0], x);
+      y = Math.max(points[i - 1][0], y);
+      if (lineStyle === 'solid') {
+        context.beginPath();
+        context.moveTo(x0, y0);
+        context.lineTo(x, y);
+        context.stroke();
+      } else if (lineStyle === 'dashed' || lineStyle === 'dotted'){
+        if (lineStyle === 'dashed') {
+          context.lineCap = 'butt';
+          deltaL = 5;
+        } else {
+          context.lineCap = 'round';
+          deltaL = 2;
+        }
+
+        if (x0 !== x) {
+          deltaX = 5 * Math.cos(Math.atan((y - y0) / (x - x0)));
+          deltaY = 5 * Math.sin(Math.atan((y - y0) / (x - x0)));
+        } else if (y0 !== y) {
+          deltaX = 5 * Math.sin(Math.atan((x - x0) / (y - y0)));
+          deltaY = 5 * Math.cos(Math.atan((x - x0) / (y - y0)));
+        }
+
+        context.beginPath();
+        for (lX = x0, lY = y0; lX <= x && lY <= y;) {
+          eX = lX + deltaL / 5 * deltaX;
+          eX = Math.min(eX, x);
+          eY = lY + deltaL / 5 * deltaY;
+          eY = Math.min(eY, y);
+          context.moveTo(lX, lY);
+          context.lineTo(eX, eY);
+          lX = eX + deltaX;
+          lY = eY + deltaY;
+        }
+        context.stroke();
+      }
+    }
+  }
+
+  imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
+
+  return imageObject;
+};
+
 })(window, document);

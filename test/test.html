@@ -5,7 +5,8 @@
 var canvas = document.getElementById('test');
 
 gridjs.open('cube.jpg', function(im) {
-  var H, corners, i;
+  var H, corners, i,
+      points = [];
 
   im.grayscale();
   H = harris(im.pixel.G);
@@ -13,12 +14,10 @@ gridjs.open('cube.jpg', function(im) {
   im.rgba();
 
   for (i = 0; i < corners.length; i++) {
-    im.pixel.r[corners[i].y][corners[i].x] = 255;
-    im.pixel.g[corners[i].y][corners[i].x] = 0;
-    im.pixel.b[corners[i].y][corners[i].x] = 0;
+    points[i] = [corners[i].x, corners[i].y];
   }
 
-  im.update().show(canvas);
+  im.plot(points, 'rx').show(canvas);
 });
 
 function harris(srcArray) {
