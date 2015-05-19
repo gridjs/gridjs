@@ -1104,6 +1104,8 @@ ImageObject.prototype.hold = function() {
   workplace.width = imageObject.width;
   workplace.height = imageObject.height;
   context.putImageData(imageObject.imageData, 0, 0);
+
+  return imageObject;
 };
 
 ImageObject.prototype.flush = function() {
