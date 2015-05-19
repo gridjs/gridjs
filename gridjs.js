@@ -388,8 +388,8 @@ gridjs.multiply = function(srcArray, dstArray) {
 
 gridjs.mul = gridjs.multiply;
 
-gridjs.divide = function(srcArray, dstArray) {
-  var x, y,
+gridjs.divide = function(srcArray, dstArray, defaultValue) {
+  var x, y, denominator,
       newArray = [],
       width = srcArray[0].length,
       height = srcArray.length;
@@ -397,8 +397,12 @@ gridjs.divide = function(srcArray, dstArray) {
   for (y = 0; y < height; y++) {
     newArray[y] = [];
     for (x = 0; x < width; x++) {
-      newArray[y][x] = srcArray[y][x] /
-          (Array.isArray(dstArray) ? dstArray[y][x] : dstArray);
+      denominator = (Array.isArray(dstArray) ? dstArray[y][x] : dstArray);
+      if (defaultValue !== undefined) {
+        newArray[y][x] = (denominator === 0 ? defaultValue : (srcArray[y][x] / denominator));
+      } else {
+        newArray[y][x] = srcArray[y][x] / denominator; 
+      } 
     }
   }
 

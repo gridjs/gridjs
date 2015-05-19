@@ -5,63 +5,32 @@
 var g = gridjs,
     canvas = document.getElementById('test');
 
-g.open('lake.jpg', function(im) {
-  sketch(im).show(canvas);
+g.open('nyt.jpg', function(im) {
+  im.resize(150, 100).grayscale();
+  console.log(harris(im.pixel.G));
 });
 
-function sepia(im) {
-  var newR, newG, newB;
+function harris(srcArray) {
+  var x, y, imx, imy, wxx, wyy, wxy, wdet, wtr, H,
+      g = gridjs,
+      width = srcArray[0].length,
+      height = srcArray.length;
 
-  newR = g.multiply(im.pixel.r, 0.393);
-  newR = g.add(newR, g.multiply(im.pixel.g, 0.769));
-  newR = g.add(newR, g.multiply(im.pixel.b, 0.189));
+      imx = g.gauss(srcArray, 5, 1, 0);
+      imy = g.gauss(srcArray, 5, 1, 1);
 
-  newG = g.multiply(im.pixel.g, 0.349);
-  newG = g.add(newG, g.multiply(im.pixel.g, 0.686));
-  newG = g.add(newG, g.multiply(im.pixel.b, 0.168));
+      wxx = g.gauss(g.square(imx), 5);
+      wyy = g.gauss(g.square(imy), 5);
+      wxy = g.gauss(g.mul(imx, imy), 5);
 
-  newB = g.multiply(im.pixel.r, 0.272);
-  newB = g.add(newB, g.multiply(im.pixel.g, 0.534));
-  newB = g.add(newB, g.multiply(im.pixel.b, 0.131));
+      wdet = g.minus(g.mul(wxx, wyy), g.square(wxy));
+      wtr = g.add(wxx, wyy);
 
-  im.pixel.r = newR;
-  im.pixel.g = newG;
-  im.pixel.b = newB;
+      H = g.div(wdet, wtr, 0);
 
-  im.update();
+      g.norm(H);
 
-  return im;
-}
-
-function sketch(im) {
-  var im2, dodge,
-      mask = [
-        [-1, -4, -7, -4, -1],   
-        [-4, -16, -26, -16, -4],   
-        [-7, -26, 505, -26, -7],  
-        [-4, -16, -26, -16, -4],   
-        [-1, -4, -7, -4, -1]
-      ];
-
-  mask = g.div(mask, 273);
-
-  im.grayscale();
-  im2 = im.copy().reverse();
-  im2.pixel.G = g.gauss(im2.pixel.G, 5);
-  im2.pixel.G = g.norm(im2.pixel.G, 0, 255);
-  
-  dodge = g.ones(im.pixel.G, 256);
-  dodge = g.minus(dodge, im2.pixel.G);
-  dodge = g.div(im2.pixel.G, dodge);
-  dodge = g.mul(im.pixel.G, dodge);
-  dodge = g.add(im.pixel.G, dodge);
-  dodge = g.cutoff(dodge, 255);
-  dodge = g.conv(dodge, mask);
-
-  im.pixel.G = dodge;
-  im.update();
-
-  return im;
+      return H;
 }
 </script>
 </body>
