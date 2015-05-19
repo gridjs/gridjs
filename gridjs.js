@@ -927,7 +927,7 @@ ImageObject.prototype.reverse = function() {
   return imageObject;
 };
 
-ImageObject.prototype.rgb = function() {
+ImageObject.prototype.rgba = function() {
   var x, y,
       imageObject = this;
 

@@ -2,15 +2,14 @@
 <canvas id="test"></canvas>
 <script src="../gridjs.js"></script>
 <script>
-var g = gridjs,
-    canvas = document.getElementById('test');
+var canvas = document.getElementById('test');
 
-g.open('nyt.jpg', function(im) {
+gridjs.open('cube.jpg', function(im) {
   var H, corners, i;
 
   im.grayscale();
   H = harris(im.pixel.G);
-  corners = getHarrisPoint(H, 0.05, 10);
+  corners = getHarrisPoint(H, 0.015, 10);
   im.rgba();
 
   for (i = 0; i < corners.length; i++) {
