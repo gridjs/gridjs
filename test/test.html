@@ -1,23 +1,29 @@
 <body>
 <canvas id="test"></canvas>
 <script src="../gridjs.js"></script>
+<script src="pilkft.js"></script>
 <script>
 var canvas = document.getElementById('test');
 
-gridjs.open('cube.jpg', function(im) {
-  var H, corners, i,
+gridjs.open('1.png', function(im) {
+  var H, corners, i, im2, v,
       points = [];
 
-  im.grayscale();
-  H = harris(im.pixel.G);
-  corners = getHarrisPoint(H, 0.015, 10);
-  im.rgba();
+  im2 = im.resize(480, 360).rotate(-90).copy().grayscale();
+  H = harris(im2.pixel.G);
+  corners = getHarrisPoint(H, 0.05, 10);
 
-  for (i = 0; i < corners.length; i++) {
-    points[i] = [corners[i].x, corners[i].y];
-  }
+  gridjs.open('2.png', function(im3) {
+    im3.resize(480, 360).rotate(-90).grayscale();
+    v = pilkft(corners, im2.pixel.G, im3.pixel.G);
+    
+    for (i = 0; i < v.length; i++) {
+      if (v[i].v.x * v[i].v.x + v[i].v.y * v[i].v.y < 2500)
+        im.plot([[v[i].x, v[i].y], [v[i].x + v[i].v.x, v[i].y + v[i].v.y]], 'kx--');
+    }
 
-  im.plot(points, 'rx').show(canvas);
+    im.show(canvas);
+  });
 });
 
 function harris(srcArray) {

@@ -1045,10 +1045,8 @@ ImageObject.prototype.plot = function(points, style) {
     }
 
     if (i > 0) {
-      x0 = Math.min(points[i - 1][0], x);
-      y0 = Math.min(points[i - 1][1], y);
-      x = Math.max(points[i - 1][0], x);
-      y = Math.max(points[i - 1][0], y);
+      x0 = points[i - 1][0];
+      y0 = points[i - 1][1];
       if (lineStyle === 'solid') {
         context.beginPath();
         context.moveTo(x0, y0);
@@ -1072,11 +1070,9 @@ ImageObject.prototype.plot = function(points, style) {
         }
 
         context.beginPath();
-        for (lX = x0, lY = y0; lX <= x && lY <= y;) {
+        for (lX = x0, lY = y0; Math.abs(lX - x0) <= Math.abs(x - x0) && Math.abs(lY - y0) <= Math.abs(y - y0);) {
           eX = lX + deltaL / 5 * deltaX;
-          eX = Math.min(eX, x);
           eY = lY + deltaL / 5 * deltaY;
-          eY = Math.min(eY, y);
           context.moveTo(lX, lY);
           context.lineTo(eX, eY);
           lX = eX + deltaX;
