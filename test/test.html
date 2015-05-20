@@ -4,7 +4,7 @@
 <script src="pilkft.js"></script>
 <script>
 var canvas = document.getElementById('test');
-
+/*
 gridjs.open('1.png', function(im) {
   var H, corners, i, im2, v,
       points = [];
@@ -25,6 +25,22 @@ gridjs.open('1.png', function(im) {
 
     im.flush().show(canvas);
   });
+});
+*/
+
+gridjs.open('gridjs_gold.jpg', function(im) {
+  var H, corners, i, im2, v,
+      points = [];
+
+  im2 = im.copy().grayscale();
+  H = harris(im2.pixel.G);
+  corners = getHarrisPoint(H, 0.05, 10);
+
+  for (i = 0; i < corners.length; i++) {
+    points[i] = [corners[i].x, corners[i].y];
+  }
+
+  im.plot(points, 'ro').show(canvas);
 });
 
 function harris(srcArray) {

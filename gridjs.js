@@ -102,17 +102,23 @@ function getGrayPixelFromImageData(imageData) {
 
 function getImageDataFromPixel(pixel) {
   var x, y, index,
-      width = pixel.r[0].length,
-      height = pixel.r.length,
+      width = pixel.a[0].length,
+      height = pixel.a.length,
       context = workplace.getContext('2d'),
       imageData = context.createImageData(width, height);
 
   for (y = 0; y < height; y++) {
     for (x = 0; x < width; x++) {
       index = (y * width + x) * 4;
-      imageData.data[index]   = pixel.r[y][x];
-      imageData.data[index + 1] = pixel.g[y][x];
-      imageData.data[index + 2] = pixel.b[y][x];
+      if (pixel.G !== undefined) {
+        imageData.data[index]   = pixel.G[y][x];
+        imageData.data[index + 1] = pixel.G[y][x];
+        imageData.data[index + 2] = pixel.G[y][x];
+      } else {
+        imageData.data[index]   = pixel.r[y][x];
+        imageData.data[index + 1] = pixel.g[y][x];
+        imageData.data[index + 2] = pixel.b[y][x];
+      }
       imageData.data[index + 3] = Math.round(pixel.a[y][x] * 255);
     }
   }
@@ -169,8 +175,8 @@ gridjs.getImageObjectFromImageData = function(imageData) {
 };
 
 gridjs.getImageObjectFromPixel = function(pixel) {
-  var width = pixel[0].length,
-      height = pixel.length,
+  var width = pixel.a[0].length,
+      height = pixel.a.length,
       imageData = getImageDataFromPixel(pixel),
       imageObject = new ImageObject();
 
@@ -484,6 +490,74 @@ gridjs.cutoff = function(srcArray, max) {
   }
 
   return srcArray;
+};
+
+gridjs.kmeans = function(points, k, maxStep, step, centers) {
+  var x, y, i, index, centerIndex,
+      distance2, minDistance2, minDistanceX, minDistanceY,
+      len = points.length,
+      clusters = [],
+      distances = [],
+      pointNumber = [];
+
+  step = step || 0;
+  maxStep = maxStep || 20;
+
+  if (centers === undefined) {
+    centers = [];
+    for (i = 0; i < k; i++) {
+      x = points[i][0];
+      y = points[i][1];
+      centers[i] = [x, y];
+    }
+  }
+
+  for (i = 0; i < len; i++) {
+    minDistance2 = null;
+    x = points[i][0];
+    y = points[i][1];
+
+    for (index = 0; index < k; index++) {
+      distance2 = (x - centers[index][0]) * (x - centers[index][0]) +
+                  (y - centers[index][1]) * (y - centers[index][1]);
+      if (minDistance2 === null || minDistance2 > distance2) {
+        minDistance2 = distance2;
+        minDistanceX = x;
+        minDistanceY = y;
+        centerIndex = index;
+      }
+    }
+
+    if (distances[centerIndex] === undefined) {
+      distances[centerIndex] = [minDistanceX, minDistanceY];
+      pointNumber[centerIndex] = 1;
+    } else {
+      distances[centerIndex][0] += minDistanceX;
+      distances[centerIndex][1] += minDistanceY;
+      pointNumber[centerIndex]++;
+    }
+
+    if (step + 1 > maxStep) {
+      if (clusters[centerIndex] === undefined) {
+        clusters[centerIndex] = [];
+      }
+      clusters[centerIndex].push([minDistanceX, minDistanceY]);
+    }
+  }
+
+  for (index = 0; index < k; index++) {
+    centers[index][0] = distances[index][0] / pointNumber[index];
+    centers[index][1] = distances[index][1] / pointNumber[index];
+  }
+
+  if (step + 1 > maxStep) {
+    return {
+      'center' : centers,
+      'cluster' : clusters
+    };
+  } else {
+    return gridjs.kmeans(points, k, maxStep, step + 1, centers);
+  }
 };
 
 ImageObject.prototype.grayscale = function() {
