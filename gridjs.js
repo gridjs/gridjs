@@ -560,6 +560,28 @@ gridjs.kmeans = function(points, k, maxStep, step, centers) {
   }
 };
 
+gridjs.blank = function(width, height, r, g, b, a) {
+  var imageObject = new ImageObject(),
+      context = workplace.getContext('2d');
+
+  r = r || 0;
+  g = g || 0;
+  b = b || 0;
+  a = a || 0;
+
+  workplace.width = width;
+  workplace.height = height;
+  context.fillStyle = 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
+  context.fillRect(0, 0, width, height);
+
+  imageObject.width = width;
+  imageObject.height = height;
+  imageObject.imageData = context.getImageData(0, 0, width, height);
+  imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+};
+
 ImageObject.prototype.grayscale = function() {
   var x, y, gray,
       imageObject = this,
@@ -894,32 +916,6 @@ ImageObject.prototype.paste = function(srcImageObject, left, top) {
   } else {
     imageObject.pixel = getPixelFromImageData(imageObject.imageData);
   }
-
-  return imageObject;
-};
-
-ImageObject.prototype.blank = function(width, height) {
-  var imageObject = new ImageObject(),
-      context = workplace.getContext('2d'),
-      imageData = context.createImageData(width, height);
-
-  imageObject.width = width;
-  imageObject.height = height;
-  imageObject.imageData = imageData;
-  imageObject.pixel = getPixelFromImageData(imageData);
-
-  return imageObject;
-};
-
-ImageObject.prototype.grayBlank = function(width, height) {
-  var imageObject = new ImageObject(),
-      context = workplace.getContext('2d'),
-      imageData = context.createImageData(width, height);
-
-  imageObject.width = width;
-  imageObject.height = height;
-  imageObject.imageData = imageData;
-  imageObject.pixel = getGrayPixelFromImageData(imageData);
 
   return imageObject;
 };

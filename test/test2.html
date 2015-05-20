@@ -2,26 +2,13 @@
 <img id="test" />
 <script src="../gridjs.js"></script>
 <script>
-var im, center, i, x, y, vq,
+var i, x, y, vq,
+    im = gridjs.blank(500, 500, 64, 64, 64, 1),
     canvas = document.getElementById('test'),
     colors = ['c', 'g', 'y', 'r', 'm', 'b'],
-    points = [],
-    p = {
-      'G' : [],
-      'a' : []
-    };
+    points = [];
 
-for (y = 0; y < 500; y++) {
-  p.G[y] = [];
-  p.a[y] = [];
-  for (x = 0; x < 500; x++) {
-    p.G[y][x] = 64;
-    p.a[y][x] = 1;
-  }
-}
-p.r = p.G;
-p.g = p.G;
-p.b = p.G;
+
 
 for (i = 0; i < 100; i++) {
   x = Math.round(Math.random() * 100);
@@ -32,9 +19,6 @@ for (i = 0; i < 100; i++) {
 }
 
 vq = gridjs.kmeans(points, 3);
-console.log(vq)
-im = gridjs.getImageObjectFromPixel(p);
-im.rgba();
 im.hold();
 for (i = 0; i < vq.cluster.length; i++) {
   im.plot(vq.cluster[i], colors[i % 6] + '.');
