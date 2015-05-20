@@ -1,10 +1,10 @@
 <body>
-<canvas id="test"></canvas>
+<img id="test" />
 <script src="../gridjs.js"></script>
 <script>
 var im, center, i, x, y, vq,
     canvas = document.getElementById('test'),
-    colors = ['r', 'g', 'b', 'c', 'm', 'y'],
+    colors = ['c', 'g', 'y', 'r', 'm', 'b'],
     points = [],
     p = {
       'G' : [],
@@ -15,7 +15,7 @@ for (y = 0; y < 500; y++) {
   p.G[y] = [];
   p.a[y] = [];
   for (x = 0; x < 500; x++) {
-    p.G[y][x] = 100;
+    p.G[y][x] = 64;
     p.a[y][x] = 1;
   }
 }
@@ -23,13 +23,15 @@ p.r = p.G;
 p.g = p.G;
 p.b = p.G;
 
-for (i = 0; i < 300; i++) {
-  x = Math.round(Math.random() * 500);
-  y = Math.round(Math.random() * 500);
-  points[i] = [x, y];
+for (i = 0; i < 100; i++) {
+  x = Math.round(Math.random() * 100);
+  y = Math.round(Math.random() * 100);
+  points[i * 3] = [x + 50, y + 50];
+  points[i * 3 + 1] = [Math.round(Math.random() * 200) + 250, Math.round(Math.random() * 200) + 100];
+  points[i * 3 + 2] = [Math.round(Math.random() * 100) + 100, Math.round(Math.random() * 100) + 300];
 }
 
-vq = gridjs.kmeans(points, 6);
+vq = gridjs.kmeans(points, 3);
 console.log(vq)
 im = gridjs.getImageObjectFromPixel(p);
 im.rgba();
@@ -37,7 +39,7 @@ im.hold();
 for (i = 0; i < vq.cluster.length; i++) {
   im.plot(vq.cluster[i], colors[i % 6] + '.');
 }
-im.plot(vq.center, 'k*');
+im.plot(vq.center, 'ro');
 im.flush();
 im.show(canvas);
 </script>

@@ -595,11 +595,18 @@ ImageObject.prototype.show = function(canvas) {
   var context,
       imageObject = this;
 
-  canvas.width = imageObject.width;
-  canvas.height = imageObject.height;
-  context = canvas.getContext('2d');
-
-  context.putImageData(imageObject.imageData, 0, 0);
+  if (canvas.tagName === 'CANVAS') {
+    canvas.width = imageObject.width;
+    canvas.height = imageObject.height;
+    context = canvas.getContext('2d');
+    context.putImageData(imageObject.imageData, 0, 0);
+  } else if (canvas.tagName === 'IMG') {
+    workplace.width = imageObject.width;
+    workplace.height = imageObject.height;
+    context = workplace.getContext('2d');
+    context.putImageData(imageObject.imageData, 0, 0);
+    canvas.src = workplace.toDataURL();
+  }
 
   return imageObject;
 };
