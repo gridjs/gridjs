@@ -58,7 +58,7 @@ or just
 im.resize(100, 100).grayscale().show(canvas);
 ```
 
-Most methods modify origin data(except `blank`, `grayBlank`, `copy` and `load`), so you may write code like this
+Most methods modify origin data(except `copy` and `load`), so you may write code like this
 
 ```
 im.resize(100, 100);
