@@ -3,12 +3,12 @@
 <script src="../gridjs.js"></script>
 <script>
 var i, x, y, vq,
-    im = gridjs.blank(500, 500, 64, 64, 64, 1),
+    im = gridjs.blank(500, 500, [64, 64, 64, 1]),
     canvas = document.getElementById('test'),
     colors = ['c', 'g', 'y', 'r', 'm', 'b'],
     points = [];
 
-
+im.poly([[10, 10], [100, 10], [50, 100]], [0, 0, 0, 0], [0 ,0, 0, 1, 1])
 
 for (i = 0; i < 100; i++) {
   x = Math.round(Math.random() * 100);

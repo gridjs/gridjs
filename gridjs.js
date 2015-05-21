@@ -560,18 +560,21 @@ gridjs.kmeans = function(points, k, maxStep, step, centers) {
   }
 };
 
-gridjs.blank = function(width, height, r, g, b, a) {
+gridjs.blank = function(width, height, fill) {
   var imageObject = new ImageObject(),
       context = workplace.getContext('2d');
 
-  r = r || 0;
-  g = g || 0;
-  b = b || 0;
-  a = a || 0;
+  if (fill === undefined) {
+    fill = [];
+  }
+  fill[0] = fill[0] || 0;
+  fill[1] = fill[1] || 0;
+  fill[2] = fill[2] || 0;
+  fill[3] = fill[3] || 0;
 
   workplace.width = width;
   workplace.height = height;
-  context.fillStyle = 'rgba(' + r + ', ' + g + ', ' + b + ', ' + a + ')';
+  context.fillStyle = 'rgba(' + fill[0] + ', ' + fill[1] + ', ' + fill[2] + ', ' + fill[3] + ')';
   context.fillRect(0, 0, width, height);
 
   imageObject.width = width;
@@ -1199,5 +1202,210 @@ ImageObject.prototype.flush = function() {
 
   return imageObject;
 };
+
+ImageObject.prototype.rectangle = function(left, top, width, height, fill, stroke) {
+  var imageObject = this,
+      context = workplace.getContext('2d');
+
+  if (imageObject.holdon !== true) {
+    workplace.width = imageObject.width;
+    workplace.height = imageObject.height;
+    context.putImageData(imageObject.imageData, 0, 0);
+  }
+
+  if (fill === undefined) {
+    fill = [];
+  }
+  fill[0] = fill[0] || 0;
+  fill[1] = fill[1] || 0;
+  fill[2] = fill[2] || 0;
+  fill[3] = fill[3] || 0;
+
+  if (stroke === undefined) {
+    stroke = [];
+  }
+  stroke[0] = stroke[0] || 0;
+  stroke[1] = stroke[1] || 0;
+  stroke[2] = stroke[2] || 0;
+  stroke[3] = stroke[3] || 0;
+  stroke[4] = stroke[4] || 0;
+
+  if (imageObject.pixel.G !== undefined) {
+    fill[0] = 0.299 * fill[0] +
+              0.587 * fill[1] +
+              0.114 * fill[2];
+    fill[0] = Math.round(fill[0]);
+    fill[1] = fill[0];
+    fill[2] = fill[0];
+
+    stroke[0] = 0.299 * stroke[0] +
+                0.587 * stroke[1] +
+                0.114 * stroke[2];
+    stroke[0] = Math.round(stroke[0]);
+    stroke[1] = stroke[0];
+    stroke[2] = stroke[0];
+  }
+
+  context.fillStyle = 'rgba(' + fill[0] + ', ' + fill[1] + ', ' + fill[2] + ', ' + fill[3] + ')';
+  context.strokeStyle = 'rgba(' + stroke[0] + ', ' + stroke[1] + ', ' + stroke[2] + ', ' + stroke[3] + ')';
+  context.lineWidth = stroke[4];
+  context.rect(left, top, width, height);
+  context.fill();
+  context.stroke();
+
+  if (imageObject.holdon !== true) {
+    imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
+    if (imageObject.pixel.G !== undefined) {
+      imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+    } else {
+      imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+    }
+  }
+
+  return imageObject;
+};
+
+ImageObject.prototype.rect = ImageObject.prototype.rectangle;
+
+ImageObject.prototype.arc = function(centerX, centerY, radius, startDegree, endDegree, fill, stroke) {
+  var imageObject = this,
+      context = workplace.getContext('2d');
+
+  if (imageObject.holdon !== true) {
+    workplace.width = imageObject.width;
+    workplace.height = imageObject.height;
+    context.putImageData(imageObject.imageData, 0, 0);
+  }
+
+  if (fill === undefined) {
+    fill = [];
+  }
+  fill[0] = fill[0] || 0;
+  fill[1] = fill[1] || 0;
+  fill[2] = fill[2] || 0;
+  fill[3] = fill[3] || 0;
+
+  if (stroke === undefined) {
+    stroke = [];
+  }
+  stroke[0] = stroke[0] || 0;
+  stroke[1] = stroke[1] || 0;
+  stroke[2] = stroke[2] || 0;
+  stroke[3] = stroke[3] || 0;
+  stroke[4] = stroke[4] || 0;
+
+  if (imageObject.pixel.G !== undefined) {
+    fill[0] = 0.299 * fill[0] +
+              0.587 * fill[1] +
+              0.114 * fill[2];
+    fill[0] = Math.round(fill[0]);
+    fill[1] = fill[0];
+    fill[2] = fill[0];
+
+    stroke[0] = 0.299 * stroke[0] +
+                0.587 * stroke[1] +
+                0.114 * stroke[2];
+    stroke[0] = Math.round(stroke[0]);
+    stroke[1] = stroke[0];
+    stroke[2] = stroke[0];
+  }
+
+  context.fillStyle = 'rgba(' + fill[0] + ', ' + fill[1] + ', ' + fill[2] + ', ' + fill[3] + ')';
+  context.strokeStyle = 'rgba(' + stroke[0] + ', ' + stroke[1] + ', ' + stroke[2] + ', ' + stroke[3] + ')';
+  context.lineWidth = stroke[4];
+  context.arc(centerX, centerY, radius, startDegree * Math.PI / 180, endDegree * Math.PI / 180);
+  context.fill();
+  context.stroke();
+
+  if (imageObject.holdon !== true) {
+    imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
+    if (imageObject.pixel.G !== undefined) {
+      imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+    } else {
+      imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+    }
+  }
+
+  return imageObject;
+};
+
+ImageObject.prototype.circle = function(centerX, centerY, radius, fill, stroke) {
+  var imageObject = this;
+
+  return imageObject.arc(centerX, centerY, radius, 0, 360, fill, stroke);
+};
+
+ImageObject.prototype.polygon = function(points, fill, stroke) {
+  var i,
+      imageObject = this,
+      context = workplace.getContext('2d');
+
+  if (imageObject.holdon !== true) {
+    workplace.width = imageObject.width;
+    workplace.height = imageObject.height;
+    context.putImageData(imageObject.imageData, 0, 0);
+  }
+
+  if (fill === undefined) {
+    fill = [];
+  }
+  fill[0] = fill[0] || 0;
+  fill[1] = fill[1] || 0;
+  fill[2] = fill[2] || 0;
+  fill[3] = fill[3] || 0;
+
+  if (stroke === undefined) {
+    stroke = [];
+  }
+  stroke[0] = stroke[0] || 0;
+  stroke[1] = stroke[1] || 0;
+  stroke[2] = stroke[2] || 0;
+  stroke[3] = stroke[3] || 0;
+  stroke[4] = stroke[4] || 0;
+
+  if (imageObject.pixel.G !== undefined) {
+    fill[0] = 0.299 * fill[0] +
+              0.587 * fill[1] +
+              0.114 * fill[2];
+    fill[0] = Math.round(fill[0]);
+    fill[1] = fill[0];
+    fill[2] = fill[0];
+
+    stroke[0] = 0.299 * stroke[0] +
+                0.587 * stroke[1] +
+                0.114 * stroke[2];
+    stroke[0] = Math.round(stroke[0]);
+    stroke[1] = stroke[0];
+    stroke[2] = stroke[0];
+  }
+
+  context.fillStyle = 'rgba(' + fill[0] + ', ' + fill[1] + ', ' + fill[2] + ', ' + fill[3] + ')';
+  context.strokeStyle = 'rgba(' + stroke[0] + ', ' + stroke[1] + ', ' + stroke[2] + ', ' + stroke[3] + ')';
+  context.lineWidth = stroke[4];
+  context.beginPath();
+  for (i = 0; i < points.length; i++) {
+    if (i === 0) {
+      context.moveTo(points[i][0], points[i][1]);
+    } else {
+      context.lineTo(points[i][0], points[i][1]);
+    }
+  }
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  if (imageObject.holdon !== true) {
+    imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
+    if (imageObject.pixel.G !== undefined) {
+      imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+    } else {
+      imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+    }
+  }
+
+  return imageObject;
+};
+
+ImageObject.prototype.poly = ImageObject.prototype.polygon;
 
 })(window, document);
