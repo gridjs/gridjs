@@ -1,0 +1,20 @@
+<body>
+<img id="test" />
+<script src="../gridjs.js"></script>
+<script>
+var canvas = document.getElementById('test');
+
+gridjs.open('cube.jpg', function(im) {
+  var mask = [
+    [-1, -2, -1],
+    [-2, 12, -2],
+    [-1, -2, -1],
+  ];
+
+  im.grayscale();
+  im.pixel.G = gridjs.conv(im.pixel.G, mask);
+  im.pixel.G = gridjs.cutoff(im.pixel.G, 255);
+  im.update().reverse().show(canvas);
+});
+</script>
+</body>

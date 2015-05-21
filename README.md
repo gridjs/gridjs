@@ -3,6 +3,7 @@
 GridJS is a JavaScript imaging library for web programming.
 
 * Web site: <http://gridjs.org>
+* Tutorial: <http://gridjs.org/docs/Tutorial.html>
 * API Docs: <http://gridjs.org/docs/API.html>
 
 # HOW TO USE
