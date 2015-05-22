@@ -636,7 +636,7 @@ ImageObject.prototype.show = function(canvas) {
   return imageObject;
 };
 
-ImageObject.prototype.blend = function(srcImageObject, offsetX, offsetY) {
+ImageObject.prototype.blend = function(srcImageObject, updown, offsetX, offsetY) {
   var x, y,
       imageObject = this,
       width = imageObject.width,
@@ -650,6 +650,7 @@ ImageObject.prototype.blend = function(srcImageObject, offsetX, offsetY) {
         'a' : []
       };
 
+  updown = updown || 0;
   offsetX = isNaN(offsetX) ? 0 : Math.round(offsetX);
   offsetY = isNaN(offsetY) ? 0 : Math.round(offsetY);
 
@@ -659,33 +660,39 @@ ImageObject.prototype.blend = function(srcImageObject, offsetX, offsetY) {
     pixel.b[y] = [];
     pixel.a[y] = [];
     for (x = 0; x < width; x++) {
-      pixel.a[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
-              y - offsetY >= srcHeight || x - offsetX >= srcWidth) ?
-          imageObject.pixel.a[y][x] :
-          (srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+      if (y - offsetY < 0 || x - offsetX < 0 ||
+              y - offsetY >= srcHeight || x - offsetX >= srcWidth) {
+        pixel.a[y][x] = imageObject.pixel.a[y][x];
+        pixel.r[y][x] = imageObject.pixel.r[y][x];
+        pixel.g[y][x] = imageObject.pixel.g[y][x];
+        pixel.b[y][x] = imageObject.pixel.b[y][x];
+      } else if (updown === 0) {
+        pixel.a[y][x] = srcImageObject.pixel.a[y - offsetY][x - offsetX] +
               imageObject.pixel.a[y][x] *
-              (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX]));
-
-      pixel.r[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
-              y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
-          imageObject.pixel.r[y][x] :
-          (srcImageObject.pixel.r[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+              (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX]);
+        pixel.r[y][x] = (srcImageObject.pixel.r[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
               imageObject.pixel.r[y][x] * imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / pixel.a[y][x];
-
-      pixel.g[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
-              y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
-          imageObject.pixel.g[y][x] :
-          (srcImageObject.pixel.g[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+        pixel.g[y][x] = (srcImageObject.pixel.g[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
               imageObject.pixel.g[y][x] * imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / pixel.a[y][x];
-
-      pixel.b[y][x] = (y - offsetY < 0 || x - offsetX < 0 ||
-              y - offsetY >= srcHeight || x - offsetX >= srcWidth || pixel.a[y][x] < 0.003) ?
-          imageObject.pixel.b[y][x] :
-          (srcImageObject.pixel.b[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
+        pixel.b[y][x] = (srcImageObject.pixel.b[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] +
               imageObject.pixel.b[y][x] * imageObject.pixel.a[y][x] *
               (1 - srcImageObject.pixel.a[y - offsetY][x - offsetX])) / pixel.a[y][x];
+      } else {
+        pixel.a[y][x] = imageObject.pixel.a[y][x] +
+              srcImageObject.pixel.a[y - offsetY][x - offsetX] *
+              (1 - imageObject.pixel.a[y][x]);
+        pixel.r[y][x] = (imageObject.pixel.r[y][x] * imageObject.pixel.a[y][x] +
+              srcImageObject.pixel.r[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] *
+              (1 - imageObject.pixel.a[y][x])) / pixel.a[y][x];
+        pixel.g[y][x] = (imageObject.pixel.g[y][x] * imageObject.pixel.a[y][x] +
+              srcImageObject.pixel.g[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] *
+              (1 - imageObject.pixel.a[y][x])) / pixel.a[y][x];
+        pixel.b[y][x] = (imageObject.pixel.b[y][x] * imageObject.pixel.a[y][x] +
+              srcImageObject.pixel.b[y - offsetY][x - offsetX] * srcImageObject.pixel.a[y - offsetY][x - offsetX] *
+              (1 - imageObject.pixel.a[y][x])) / pixel.a[y][x];
+      }
 
       pixel.r[y][x] = Math.round(pixel.r[y][x]);
       pixel.g[y][x] = Math.round(pixel.g[y][x]);
@@ -909,8 +916,8 @@ ImageObject.prototype.paste = function(srcImageObject, left, top) {
 
   workplace.width = width;
   workplace.height = height;
-  context.putImageData(imageObject, 0, 0);
-  context.putImageData(srcImageObject, left, top);
+  context.putImageData(imageObject.imageData, 0, 0);
+  context.putImageData(srcImageObject.imageData, left, top);
 
   imageObject.imageData = context.getImageData(0, 0, width, height);
 
@@ -1011,6 +1018,17 @@ ImageObject.prototype.rgba = function() {
   var imageObject = this;
 
   imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+
+  return imageObject;
+};
+
+ImageObject.prototype.rgb = function() {
+  var imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      whiteBlank = gridjs.blank(width, height, [255, 255, 255, 1]);
+
+  imageObject.blend(whiteBlank, 1);
 
   return imageObject;
 };
