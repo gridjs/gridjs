@@ -770,6 +770,16 @@ ImageObject.prototype.resize = function(newWidth, newHeight) {
       context = workplace.getContext('2d'),
       image = getImageFromImageData(imageObject.imageData);
 
+  if (newWidth < 1) {
+    newWidth *= imageObject.width;
+    newWidth = Math.round(newWidth);
+  }
+
+  if (newHeight < 1) {
+    newHeight *= imageObject.height;
+    newHeight = Math.round(newHeight);
+  }
+
   workplace.width = newWidth;
   workplace.height = newHeight;
   context.drawImage(image, 0, 0, newWidth, newHeight);
@@ -1425,5 +1435,38 @@ ImageObject.prototype.polygon = function(points, fill, stroke) {
 };
 
 ImageObject.prototype.poly = ImageObject.prototype.polygon;
+
+ImageObject.prototype.affine = function(matrix) {
+  var det = matrix[0][0] * matrix[1][1] - matrix[1][0] * matrix[0][1],
+      a = matrix[1][1] / det,
+      b = -matrix[1][0] / det,
+      c = -matrix[0][1] / det,
+      d = matrix[0][0] / det,
+      e = (matrix[0][1] * matrix[1][2] - matrix[1][1] * matrix[0][2]) / det,
+      f = (matrix[1][0] * matrix[0][2] - matrix[0][0] * matrix[1][2]) / det,
+      imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      imageDataContext = imageDataWorkplace.getContext('2d'),
+      context = workplace.getContext('2d');
+
+  imageDataWorkplace.width = width;
+  imageDataWorkplace.height = height;
+  imageDataContext.putImageData(imageObject.imageData, 0, 0);
+
+  workplace.width = width;
+  workplace.height = height;
+  context.transform(a, b, c, d, e, f);
+  context.drawImage(imageDataWorkplace, 0, 0);
+
+  imageObject.imageData = context.getImageData(0, 0, width, height);
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
+
+  return imageObject;
+};
 
 })(window, document);
