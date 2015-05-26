@@ -1437,14 +1437,7 @@ ImageObject.prototype.polygon = function(points, fill, stroke) {
 ImageObject.prototype.poly = ImageObject.prototype.polygon;
 
 ImageObject.prototype.affine = function(matrix) {
-  var det = matrix[0][0] * matrix[1][1] - matrix[1][0] * matrix[0][1],
-      a = matrix[1][1] / det,
-      b = -matrix[1][0] / det,
-      c = -matrix[0][1] / det,
-      d = matrix[0][0] / det,
-      e = (matrix[0][1] * matrix[1][2] - matrix[1][1] * matrix[0][2]) / det,
-      f = (matrix[1][0] * matrix[0][2] - matrix[0][0] * matrix[1][2]) / det,
-      imageObject = this,
+  var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
       imageDataContext = imageDataWorkplace.getContext('2d'),
@@ -1456,7 +1449,64 @@ ImageObject.prototype.affine = function(matrix) {
 
   workplace.width = width;
   workplace.height = height;
-  context.transform(a, b, c, d, e, f);
+  context.transform(matrix[0][0], matrix[1][0], matrix[0][1], matrix[1][1], matrix[0][2], matrix[1][2]);
+  context.drawImage(imageDataWorkplace, 0, 0);
+
+  imageObject.imageData = context.getImageData(0, 0, width, height);
+  if (imageObject.pixel.G !== undefined) {
+    imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+  } else {
+    imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+  }
+
+  return imageObject;
+};
+
+ImageObject.prototype.affinec = function(leftTop, rightTop, leftBottom, rightBottom) {
+  var m11, m12, m13, m21, m22, m23,
+      imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height,
+      imageDataContext = imageDataWorkplace.getContext('2d'),
+      context = workplace.getContext('2d');
+
+  if (Array.isArray(leftTop) === true) {
+    m13 = leftTop[0];
+    m23 = leftTop[1];
+
+    if (Array.isArray(rightTop) === true) {
+      m11 = (rightTop[0] - m13) / width;
+      m21 = (rightTop[1] - m23) / width;
+    }
+
+    if (Array.isArray(leftBottom) === true) {
+      m12 = (leftBottom[0] - m13) / height;
+      m22 = (leftBottom[1] - m23) / height;
+    }
+
+    if (m11 === undefined) {
+      m11 = (rightBottom[0] - m13 - m12 * height) / width;
+      m21 = (rightBottom[1] - m23 - m22 * height) / width;
+    } else if (m12 === undefined) {
+      m12 = (rightBottom[0] - m13 - m11 * width) / height;
+      m22 = (rightBottom[1] - m23 - m21 * width) / height;
+    }
+  } else {
+    m11 = (rightBottom[0] - leftTop[0]) / width;
+    m21 = (rightBottom[1] - leftTop[1]) / width;
+    m12 = (leftBottom[0] - rightTop[0] - m11 * width) / height;
+    m22 = (leftBottom[1] - rightTop[1] - m21 * width) / height;
+    m13 = leftBottom[0] - m12 * height;
+    m23 = leftBottom[1] - m22 * height;
+  }
+
+  imageDataWorkplace.width = width;
+  imageDataWorkplace.height = height;
+  imageDataContext.putImageData(imageObject.imageData, 0, 0);
+
+  workplace.width = width;
+  workplace.height = height;
+  context.transform(m11, m21, m12, m22, m13, m23);
   context.drawImage(imageDataWorkplace, 0, 0);
 
   imageObject.imageData = context.getImageData(0, 0, width, height);
