@@ -1462,7 +1462,7 @@ ImageObject.prototype.affine = function(matrix) {
   return imageObject;
 };
 
-ImageObject.prototype.affinec = function(leftTop, rightTop, leftBottom, rightBottom) {
+ImageObject.prototype.affinec = function(topLeft, topRight, bottomLeft, bottomRight) {
   var m11, m12, m13, m21, m22, m23,
       imageObject = this,
       width = imageObject.width,
@@ -1470,34 +1470,34 @@ ImageObject.prototype.affinec = function(leftTop, rightTop, leftBottom, rightBot
       imageDataContext = imageDataWorkplace.getContext('2d'),
       context = workplace.getContext('2d');
 
-  if (Array.isArray(leftTop) === true) {
-    m13 = leftTop[0];
-    m23 = leftTop[1];
+  if (Array.isArray(topLeft) === true) {
+    m13 = topLeft[0];
+    m23 = topLeft[1];
 
-    if (Array.isArray(rightTop) === true) {
-      m11 = (rightTop[0] - m13) / width;
-      m21 = (rightTop[1] - m23) / width;
+    if (Array.isArray(topRight) === true) {
+      m11 = (topRight[0] - m13) / width;
+      m21 = (topRight[1] - m23) / width;
     }
 
-    if (Array.isArray(leftBottom) === true) {
-      m12 = (leftBottom[0] - m13) / height;
-      m22 = (leftBottom[1] - m23) / height;
+    if (Array.isArray(bottomLeft) === true) {
+      m12 = (bottomLeft[0] - m13) / height;
+      m22 = (bottomLeft[1] - m23) / height;
     }
 
     if (m11 === undefined) {
-      m11 = (rightBottom[0] - m13 - m12 * height) / width;
-      m21 = (rightBottom[1] - m23 - m22 * height) / width;
+      m11 = (bottomRight[0] - m13 - m12 * height) / width;
+      m21 = (bottomRight[1] - m23 - m22 * height) / width;
     } else if (m12 === undefined) {
-      m12 = (rightBottom[0] - m13 - m11 * width) / height;
-      m22 = (rightBottom[1] - m23 - m21 * width) / height;
+      m12 = (bottomRight[0] - m13 - m11 * width) / height;
+      m22 = (bottomRight[1] - m23 - m21 * width) / height;
     }
   } else {
-    m11 = (rightBottom[0] - leftTop[0]) / width;
-    m21 = (rightBottom[1] - leftTop[1]) / width;
-    m12 = (leftBottom[0] - rightTop[0] - m11 * width) / height;
-    m22 = (leftBottom[1] - rightTop[1] - m21 * width) / height;
-    m13 = leftBottom[0] - m12 * height;
-    m23 = leftBottom[1] - m22 * height;
+    m11 = (bottomRight[0] - topLeft[0]) / width;
+    m21 = (bottomRight[1] - topLeft[1]) / width;
+    m12 = (bottomLeft[0] - topRight[0] - m11 * width) / height;
+    m22 = (bottomLeft[1] - topRight[1] - m21 * width) / height;
+    m13 = bottomLeft[0] - m12 * height;
+    m23 = bottomLeft[1] - m22 * height;
   }
 
   imageDataWorkplace.width = width;
