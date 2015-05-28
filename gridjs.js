@@ -546,8 +546,13 @@ gridjs.kmeans = function(points, k, maxStep, step, centers) {
   }
 
   for (index = 0; index < k; index++) {
-    centers[index][0] = distances[index][0] / pointNumber[index];
-    centers[index][1] = distances[index][1] / pointNumber[index];
+    if (distances[index] === undefined) {
+      centers[index][0] = points[index][0];
+      centers[index][1] = points[index][1];
+    } else {
+      centers[index][0] = distances[index][0] / pointNumber[index];
+      centers[index][1] = distances[index][1] / pointNumber[index];
+    }
   }
 
   if (step + 1 > maxStep) {
