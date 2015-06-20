@@ -1526,4 +1526,75 @@ ImageObject.prototype.affinec = function(topLeft, topRight, bottomLeft, bottomRi
   return imageObject;
 };
 
+ImageObject.prototype.text = function(left, top, text, style) {
+  var i,
+      imageObject = this,
+      context = workplace.getContext('2d'),
+      textSize = '14px',
+      textFamily = 'Arial',
+      textColor = [0, 0, 0, 1],
+      textAlign = 'start',
+      textBaseline = 'top',
+      textFontStyle = 'normal',
+      textFontVariant = 'normal',
+      textWeight = 'normal';
+
+  if (imageObject.holdon !== true) {
+    workplace.width = imageObject.width;
+    workplace.height = imageObject.height;
+    context.putImageData(imageObject.imageData, 0, 0);
+  }
+
+  for (i = 0; i < style.length; i++) {
+    var thisStyle = style[i];
+    if (typeof(thisStyle) === 'string') {
+      if (/^\d+px/.test(thisStyle)) {
+        textSize = thisStyle;
+      } else if (['start', 'end', 'center', 'left', 'right'].indexOf(thisStyle) !== -1) {
+        textAlign = thisStyle;
+      } else if (['top', 'bottom', 'middle', 'alphabetic', 'hanging'].indexOf(thisStyle) !== -1) {
+        textBaseline = thisStyle;
+      } else if (['italic', 'oblique'].indexOf(thisStyle) !== -1) {
+        textFontStyle = thisStyle;
+      }  else if (['bold', 'bolder', 'lighter'].indexOf(thisStyle) !== -1) {
+        textWeight = thisStyle;
+      } else if ('small-caps' === thisStyle) {
+        textFontVariant = thisStyle;
+      } else {
+        textFamily = thisStyle;
+      }
+    } else if (Array.isArray(thisStyle) && thisStyle.length === 4) {
+      textColor = thisStyle;
+    } else if (typeof(thisStyle) === 'number' && [1, 2, 3, 4, 5, 6, 7, 8, 9].indexOf(thisStyle / 100) !== -1) {
+      textWeight = thisStyle;
+    }
+  }
+
+  if (imageObject.pixel.G !== undefined) {
+    textColor[0] = 0.299 * textColor[0] +
+                   0.587 * textColor[1] +
+                   0.114 * textColor[2];
+    textColor[0] = Math.round(textColor[0]);
+    textColor[1] = textColor[0];
+    textColor[2] = textColor[0];
+  }
+
+  context.fillStyle = 'rgba(' + textColor[0] + ', ' + textColor[1] + ', ' + textColor[2] + ', ' + textColor[3] + ')';
+  context.textAlign = textAlign;
+  context.textBaseline = textBaseline;
+  context.font = [textFontStyle, textFontVariant, textWeight, textSize, textFamily].join(' ');
+  context.fillText(text, left, top);
+
+  if (imageObject.holdon !== true) {
+    imageObject.imageData = context.getImageData(0, 0, imageObject.width, imageObject.height);
+    if (imageObject.pixel.G !== undefined) {
+      imageObject.pixel = getGrayPixelFromImageData(imageObject.imageData);
+    } else {
+      imageObject.pixel = getPixelFromImageData(imageObject.imageData);
+    }
+  }
+
+  return imageObject;
+};
+
 })(window, document);
