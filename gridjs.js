@@ -1282,6 +1282,7 @@ ImageObject.prototype.rectangle = function(left, top, width, height, fill, strok
   context.fillStyle = 'rgba(' + fill[0] + ', ' + fill[1] + ', ' + fill[2] + ', ' + fill[3] + ')';
   context.strokeStyle = 'rgba(' + stroke[0] + ', ' + stroke[1] + ', ' + stroke[2] + ', ' + stroke[3] + ')';
   context.lineWidth = stroke[4];
+  context.beginPath();
   context.rect(left, top, width, height);
   context.fill();
   context.stroke();
@@ -1346,6 +1347,7 @@ ImageObject.prototype.arc = function(centerX, centerY, radius, startDegree, endD
   context.fillStyle = 'rgba(' + fill[0] + ', ' + fill[1] + ', ' + fill[2] + ', ' + fill[3] + ')';
   context.strokeStyle = 'rgba(' + stroke[0] + ', ' + stroke[1] + ', ' + stroke[2] + ', ' + stroke[3] + ')';
   context.lineWidth = stroke[4];
+  context.beginPath();
   context.arc(centerX, centerY, radius, startDegree * Math.PI / 180, endDegree * Math.PI / 180);
   context.fill();
   context.stroke();
