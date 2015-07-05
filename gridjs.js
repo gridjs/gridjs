@@ -136,7 +136,57 @@ function getImageFromImageData(imageData) {
   return imageDataWorkplace;
 }
 
+function minErr(method, template) {
+  var i, message = '[' + method + '] ',
+      templateArgs = arguments,
+      template = template.split('%s');
+
+  for (i = 0; i < template.length - 1; i++) {
+    message += template[i] + templateArgs[i + 2];
+  }
+  message += template[template.length - 1];
+  gridjs.lastError = message;
+  throw(message + '\nSee http://gridjs.org/docs/API.html#index_' + method + ' for more details.');
+}
+
+function checkType(method, types, args, values) {
+  var i, currentType,
+      args = args.replace(/,\s+/, ',').split(','),
+      arr = [method, null],
+      template = [];
+
+  for (i = 0; i < types.length; i++) {
+    currentType = typeof(values[i]);
+    if (Array.isArray(values[i]) && Array.isArray(values[i][0])) {
+      currentType = 'two-dimensional array';
+    } else if (Array.isArray(values[i])) {
+      currentType = 'array';
+    } else if (values[i] === null) {
+      currentType = 'undefined';
+    }
+    types[i] = types[i].replace(/,\s+/, ',');
+    if (types[i].split(',').indexOf(currentType) === -1) {
+      template.push(args[i] + ' should be %s, but %s is given.');
+      arr.push(types[i].split(',').join(' or '), currentType);
+    }
+  }
+  arr[1] = template.join(' ');
+  if (template.length) {
+    minErr.apply(null, arr);
+    return false;
+  } else {
+    return true;
+  }
+}
+
+gridjs.lastError = null;
+
 gridjs.getImageObject = function(image, callback) {
+  if (checkType('gridjs.getImageObject',
+                ['string, object', 'function'],
+                'image, callback', [image, callback])) {
+    return;
+  }
   if (typeof(image) === 'string') {
     gridjs.getImageObjectFromURL(image, callback);
   } else if (Array.isArray(image.r) === true) {
@@ -149,6 +199,11 @@ gridjs.getImageObject = function(image, callback) {
 gridjs.open = gridjs.getImageObject;
 
 gridjs.getImageObjectFromURL = function(url, callback) {
+  if (!checkType('gridjs.getImageObjectFromURL',
+                 ['string', 'function'],
+                 'url, callback', [url, callback])) {
+    return;
+  }
   getImageDataFromURL(url, function(imageData) {
     var imageObject = new ImageObject();
     imageObject.imageData = imageData;
@@ -161,6 +216,11 @@ gridjs.getImageObjectFromURL = function(url, callback) {
 };
 
 gridjs.getImageObjectFromImageData = function(imageData) {
+  if (!checkType('gridjs.getImageObjectFromImageData',
+                 ['object'],
+                 'imageData', [imageData])) {
+    return;
+  }
   var width = imageData.width,
       height = imageData.height,
       pixel = getPixelFromImageData(imageData),
@@ -175,6 +235,11 @@ gridjs.getImageObjectFromImageData = function(imageData) {
 };
 
 gridjs.getImageObjectFromPixel = function(pixel) {
+  if (!checkType('gridjs.getImageObjectFromPixel',
+                 ['object'],
+                 'pixel', [pixel])) {
+    return;
+  }
   var width = pixel.a[0].length,
       height = pixel.a.length,
       imageData = getImageDataFromPixel(pixel),
@@ -189,6 +254,11 @@ gridjs.getImageObjectFromPixel = function(pixel) {
 };
 
 gridjs.convolution = function(srcArray, maskArray) {
+  if (!checkType('gridjs.convolution',
+                 ['two-dimensional array', 'two-dimensional array'],
+                 'srcArray, maskArray', [srcArray, maskArray])) {
+    return;
+  }
   var x, y, mX, mY, cX, cY, value,
       newArray = [],
       width = srcArray[0].length,
@@ -221,6 +291,11 @@ gridjs.convolution = function(srcArray, maskArray) {
 gridjs.conv = gridjs.convolution;
 
 gridjs.abs = function(srcArray) {
+  if (!checkType('gridjs.abs',
+                 ['two-dimensional array'],
+                 'srcArray', [srcArray])) {
+    return;
+  }
   var x, y,
       newArray = [],
       width = srcArray[0].length,
@@ -237,6 +312,11 @@ gridjs.abs = function(srcArray) {
 };
 
 gridjs.square = function(srcArray) {
+  if (!checkType('gridjs.square',
+                 ['two-dimensional array'],
+                 'srcArray', [srcArray])) {
+    return;
+  }
   var x, y,
       newArray = [],
       width = srcArray[0].length,
@@ -253,6 +333,11 @@ gridjs.square = function(srcArray) {
 };
 
 gridjs.sqrt = function(srcArray) {
+  if (!checkType('gridjs.sqrt',
+                 ['two-dimensional array'],
+                 'srcArray', [srcArray])) {
+    return;
+  }
   var x, y,
       newArray = [],
       width = srcArray[0].length,
@@ -269,6 +354,11 @@ gridjs.sqrt = function(srcArray) {
 };
 
 gridjs.gauseCore = function(size, sigma, derivative) {
+  if (!checkType('gridjs.gauseCore',
+                 ['number', 'number, undefined', 'number, undefined'],
+                 'size, sigma, derivative', [size, sigma, derivative])) {
+    return;
+  }
   var x, y, deltaX, deltaY,
       sum = 0,
       halfSize = Math.round(size / 2),
@@ -338,12 +428,22 @@ gridjs.gauseCore = function(size, sigma, derivative) {
 };
 
 gridjs.gauss = function(srcArray, size, sigma, derivative) {
+  if (!checkType('gridjs.gauss',
+                 ['two-dimensional array', 'number', 'number, undefined', 'number, undefined'],
+                 'srcArray, size, sigma, derivative', [srcArray, size, sigma, derivative])) {
+    return;
+  }
   var mask = gridjs.gauseCore(size, sigma, derivative);
 
   return gridjs.convolution(srcArray, mask);
 };
 
 gridjs.add = function(srcArray, dstArray) {
+  if (!checkType('gridjs.add',
+                 ['two-dimensional array', 'two-dimensional array'],
+                 'srcArray, dstArray', [srcArray, dstArray])) {
+    return;
+  }
   var x, y,
       newArray = [],
       width = srcArray[0].length,
@@ -360,6 +460,11 @@ gridjs.add = function(srcArray, dstArray) {
 };
 
 gridjs.minus = function(srcArray, dstArray) {
+  if (!checkType('gridjs.minus',
+                 ['two-dimensional array', 'two-dimensional array'],
+                 'srcArray, dstArray', [srcArray, dstArray])) {
+    return;
+  }
   var x, y,
       newArray = [],
       width = srcArray[0].length,
@@ -376,6 +481,11 @@ gridjs.minus = function(srcArray, dstArray) {
 };
 
 gridjs.multiply = function(srcArray, dstArray) {
+  if (!checkType('gridjs.multiply',
+                 ['two-dimensional array', 'two-dimensional array, number'],
+                 'srcArray, dstArray', [srcArray, dstArray])) {
+    return;
+  }
   var x, y,
       newArray = [],
       width = srcArray[0].length,
@@ -395,6 +505,11 @@ gridjs.multiply = function(srcArray, dstArray) {
 gridjs.mul = gridjs.multiply;
 
 gridjs.divide = function(srcArray, dstArray, defaultValue) {
+  if (!checkType('gridjs.multiply',
+                 ['two-dimensional array', 'two-dimensional array, number', 'number, undefined'],
+                 'srcArray, dstArray, defaultValue', [srcArray, dstArray, defaultValue])) {
+    return;
+  }
   var x, y, denominator,
       newArray = [],
       width = srcArray[0].length,
@@ -418,6 +533,11 @@ gridjs.divide = function(srcArray, dstArray, defaultValue) {
 gridjs.div = gridjs.divide;
 
 gridjs.zeros = function(width, height) {
+  if (!checkType('gridjs.zeros',
+                 ['two-dimensional array, number', 'number, undefined'],
+                 'width, height', [width, height])) {
+    return;
+  }
   if (Array.isArray(width)) {
     height = width.length;
     width = width[0].length;
@@ -427,6 +547,11 @@ gridjs.zeros = function(width, height) {
 };
 
 gridjs.ones = function(width, height, value) {
+  if (!checkType('gridjs.ones',
+                 ['two-dimensional array, number', 'number, undefined', 'number, undefined'],
+                 'width, height, value', [width, height, value])) {
+    return;
+  }
   var x, y,
       newArray = [];
 
@@ -449,6 +574,11 @@ gridjs.ones = function(width, height, value) {
 };
 
 gridjs.normalize = function(srcArray, min, max) {
+  if (!checkType('gridjs.normalize',
+                 ['two-dimensional array', 'number, undefined', 'number, undefined'],
+                 'srcArray, min, max', [srcArray, min, max])) {
+    return;
+  }
   var x, y, minValue, maxValue,
       width = srcArray[0].length,
       height = srcArray.length;
@@ -479,6 +609,11 @@ gridjs.normalize = function(srcArray, min, max) {
 gridjs.norm = gridjs.normalize;
 
 gridjs.cutoff = function(srcArray, max) {
+  if (!checkType('gridjs.cutoff',
+                 ['two-dimensional array', 'number'],
+                 'srcArray, max', [srcArray, max])) {
+    return;
+  }
   var x, y,
       width = srcArray[0].length,
       height = srcArray.length;
@@ -493,6 +628,11 @@ gridjs.cutoff = function(srcArray, max) {
 };
 
 gridjs.kmeans = function(points, k, maxStep, step, centers) {
+  if (!checkType('gridjs.kmeans',
+                 ['two-dimensional array', 'number', 'number, undefined'],
+                 'points, k, maxStep', [points, k, maxStep])) {
+    return;
+  }
   var x, y, i, index, centerIndex,
       distance2, minDistance2, minDistanceX, minDistanceY,
       len = points.length,
@@ -566,6 +706,11 @@ gridjs.kmeans = function(points, k, maxStep, step, centers) {
 };
 
 gridjs.blank = function(width, height, fill) {
+  if (!checkType('gridjs.blank',
+                 ['number', 'number', 'array, undefined'],
+                 'width, height, fill', [width, height, fill])) {
+    return;
+  }
   var imageObject = new ImageObject(),
       context = workplace.getContext('2d');
 
@@ -642,6 +787,11 @@ ImageObject.prototype.show = function(canvas) {
 };
 
 ImageObject.prototype.blend = function(srcImageObject, updown, offsetX, offsetY) {
+  if (!checkType('ImageObject.blend',
+                 ['number, undefined', 'number, undefined', 'number, undefined'],
+                 'updown, offsetX, offsetY', [updown, offsetX, offsetY])) {
+    return;
+  }
   var x, y,
       imageObject = this,
       width = imageObject.width,
@@ -656,8 +806,8 @@ ImageObject.prototype.blend = function(srcImageObject, updown, offsetX, offsetY)
       };
 
   updown = updown || 0;
-  offsetX = isNaN(offsetX) ? 0 : Math.round(offsetX);
-  offsetY = isNaN(offsetY) ? 0 : Math.round(offsetY);
+  offsetX = offsetX ? Math.round(offsetX) : 0;
+  offsetY = offsetY ? Math.round(offsetY) : 0;
 
   for (y = 0; y < height; y++) {
     pixel.r[y] = [];
@@ -771,6 +921,11 @@ ImageObject.prototype.copy = function() {
 };
 
 ImageObject.prototype.resize = function(newWidth, newHeight) {
+  if (!checkType('ImageObject.resize',
+                 ['number', 'number'],
+                 'newWidth, newHeight', [newWidth, newHeight])) {
+    return;
+  }
   var imageObject = this,
       context = workplace.getContext('2d'),
       image = getImageFromImageData(imageObject.imageData);
@@ -803,6 +958,11 @@ ImageObject.prototype.resize = function(newWidth, newHeight) {
 };
 
 ImageObject.prototype.rotate = function(degree) {
+  if (!checkType('ImageObject.rotate',
+                 ['number'],
+                 'degree', [degree])) {
+    return;
+  }
   var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -922,6 +1082,11 @@ ImageObject.prototype.updatePixel = function() {
 ImageObject.prototype.update = ImageObject.prototype.updateImageData;
 
 ImageObject.prototype.paste = function(srcImageObject, left, top) {
+  if (!checkType('ImageObject.paste',
+                 ['number, undefined', 'number, undefined'],
+                 'left, top', [left, top])) {
+    return;
+  }
   var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -946,6 +1111,11 @@ ImageObject.prototype.paste = function(srcImageObject, left, top) {
 };
 
 ImageObject.prototype.load = function(left, top, width, height) {
+  if (!checkType('ImageObject.load',
+                 ['number', 'number', 'number', 'number'],
+                 'left, top, width, height', [left, top, width, height])) {
+    return;
+  }
   var imageObject = this,
       newImageObject = new ImageObject(),
       context = workplace.getContext('2d');
@@ -972,6 +1142,11 @@ ImageObject.prototype.load = function(left, top, width, height) {
 };
 
 ImageObject.prototype.flip = function(axis) {
+  if (!checkType('ImageObject.flip',
+                 ['number'],
+                 'axis', [axis])) {
+    return;
+  }
   var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -1049,6 +1224,11 @@ ImageObject.prototype.rgb = function() {
 };
 
 ImageObject.prototype.plot = function(points, style) {
+  if (!checkType('ImageObject.plot',
+                 ['array, two-dimensional array', 'string, undefined'],
+                 'points, style', [points, style])) {
+    return;
+  }
   var i, x, y, lX, lY, x0, y0, deltaX, deltaY, deltaL, eX, eY,
       imageObject = this,
       color = 'blue',
@@ -1237,6 +1417,11 @@ ImageObject.prototype.flush = function() {
 };
 
 ImageObject.prototype.rectangle = function(left, top, width, height, fill, stroke) {
+  if (!checkType('ImageObject.rectangle',
+                 ['number', 'number', 'number', 'number', 'array, undefined', 'array, undefined'],
+                 'left, top, width, height, fill, stroke', [left, top, width, height, fill, stroke])) {
+    return;
+  }
   var imageObject = this,
       context = workplace.getContext('2d');
 
@@ -1302,6 +1487,11 @@ ImageObject.prototype.rectangle = function(left, top, width, height, fill, strok
 ImageObject.prototype.rect = ImageObject.prototype.rectangle;
 
 ImageObject.prototype.arc = function(centerX, centerY, radius, startDegree, endDegree, fill, stroke) {
+  if (!checkType('ImageObject.arc',
+                 ['number', 'number', 'number', 'number', 'number', 'array, undefined', 'array, undefined'],
+                 'centerX, centerY, radius, startDegree, endDegree, fill, stroke', [centerX, centerY, radius, startDegree, endDegree, fill, stroke])) {
+    return;
+  }
   var imageObject = this,
       context = workplace.getContext('2d');
 
@@ -1365,12 +1555,22 @@ ImageObject.prototype.arc = function(centerX, centerY, radius, startDegree, endD
 };
 
 ImageObject.prototype.circle = function(centerX, centerY, radius, fill, stroke) {
+  if (!checkType('ImageObject.circle',
+                 ['number', 'number', 'number', 'array, undefined', 'array, undefined'],
+                 'centerX, centerY, radius, fill, stroke', [centerX, centerY, radius, fill, stroke])) {
+    return;
+  }
   var imageObject = this;
 
   return imageObject.arc(centerX, centerY, radius, 0, 360, fill, stroke);
 };
 
 ImageObject.prototype.polygon = function(points, fill, stroke) {
+  if (!checkType('ImageObject.polygon',
+                 ['two-dimensional array', 'array, undefined', 'array, undefined'],
+                 'points, fill, stroke', [points, fill, stroke])) {
+    return;
+  }
   var i,
       imageObject = this,
       context = workplace.getContext('2d');
@@ -1444,6 +1644,11 @@ ImageObject.prototype.polygon = function(points, fill, stroke) {
 ImageObject.prototype.poly = ImageObject.prototype.polygon;
 
 ImageObject.prototype.affine = function(matrix) {
+  if (!checkType('ImageObject.affine',
+                 ['two-dimensional array'],
+                 'matrix', [matrix])) {
+    return;
+  }
   var imageObject = this,
       width = imageObject.width,
       height = imageObject.height,
@@ -1470,6 +1675,11 @@ ImageObject.prototype.affine = function(matrix) {
 };
 
 ImageObject.prototype.affinec = function(topLeft, topRight, bottomLeft, bottomRight) {
+  if (!checkType('ImageObject.affinec',
+                 ['array, undefined', 'array, undefined', 'array, undefined', 'array, undefined'],
+                 'topLeft, topRight, bottomLeft, bottomRight', [topLeft, topRight, bottomLeft, bottomRight])) {
+    return;
+  }
   var m11, m12, m13, m21, m22, m23,
       imageObject = this,
       width = imageObject.width,
@@ -1527,6 +1737,11 @@ ImageObject.prototype.affinec = function(topLeft, topRight, bottomLeft, bottomRi
 };
 
 ImageObject.prototype.text = function(left, top, text, style) {
+  if (!checkType('ImageObject.text',
+                 ['number', 'number', 'string', 'array, undefined'],
+                 'left, top, text, style', [left, top, text, style])) {
+    return;
+  }
   var i,
       imageObject = this,
       context = workplace.getContext('2d'),
