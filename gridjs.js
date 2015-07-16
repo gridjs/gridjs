@@ -182,7 +182,7 @@ function checkType(method, types, args, values) {
 gridjs.lastError = null;
 
 gridjs.getImageObject = function(image, callback) {
-  if (checkType('gridjs.getImageObject',
+  if (!checkType('gridjs.getImageObject',
                 ['string, object', 'function'],
                 'image, callback', [image, callback])) {
     return;
@@ -1811,5 +1811,22 @@ ImageObject.prototype.text = function(left, top, text, style) {
 
   return imageObject;
 };
+
+ImageObject.prototype.mask = function(maskImageObject) {
+  var x, y,
+      imageObject = this,
+      width = imageObject.width,
+      height = imageObject.height;
+
+  for (y = 0; y < height; y++) {
+    for (x = 0; x < width; x++) {
+      imageObject.pixel.a[y][x] = maskImageObject.pixel.a[y][x];
+    }
+  }
+
+  imageObject.imageData = getImageDataFromPixel(imageObject.pixel);
+
+  return imageObject;
+}
 
 })(window, document);
