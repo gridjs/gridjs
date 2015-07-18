@@ -11,7 +11,7 @@ GridJS is a JavaScript imaging library for web programming.
 Add GridJS to your page
 
 ```
-<script src="//cdn.jsdelivr.net/gridjs/0.1.1/gridjs.min.js"></script>
+<script src="//cdn.jsdelivr.net/gridjs/latest/gridjs.min.js"></script>
 ```
 
 Then open an image from URL
